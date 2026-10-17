@@ -17,8 +17,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "9Router - AI Infrastructure Management",
-  description: "One endpoint for all your AI providers. Manage keys, monitor usage, and scale effortlessly.",
+  title: "AI.ONE - AI Infrastructure Management",
+  description:
+    "One endpoint for all your AI providers. Manage keys, monitor usage, and scale effortlessly.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -48,9 +49,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
-          <RuntimeI18nProvider>
-            {children}
-          </RuntimeI18nProvider>
+          <RuntimeI18nProvider>{children}</RuntimeI18nProvider>
         </ThemeProvider>
         <GoogleAnalytics gaId={"G-LC959F603F"} />
       </body>
