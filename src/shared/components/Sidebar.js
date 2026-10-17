@@ -13,15 +13,31 @@ import Button from "./Button";
 import { ConfirmModal } from "./Modal";
 
 // const VISIBLE_MEDIA_KINDS = ["embedding", "image", "imageToText", "tts", "stt", "webSearch", "webFetch", "video", "music"];
-const VISIBLE_MEDIA_KINDS = ["embedding", "image", "video", "tts", "stt", "systemone"];
+const VISIBLE_MEDIA_KINDS = [
+  "embedding",
+  "image",
+  "video",
+  "tts",
+  "stt",
+  "systemone",
+];
 // Combined entry: webSearch + webFetch share one page at /dashboard/media-providers/web
-const COMBINED_WEB_ITEM = { id: "web", label: "Web Fetch & Search", icon: "travel_explore", href: "/dashboard/media-providers/web" };
+const COMBINED_WEB_ITEM = {
+  id: "web",
+  label: "Web Fetch & Search",
+  icon: "travel_explore",
+  href: "/dashboard/media-providers/web",
+};
 
 const navItems = [
   { href: "/dashboard/endpoint", label: "Endpoint & Key", icon: "api" },
   { href: "/dashboard/providers", label: "Providers", icon: "dns" },
   // { href: "/dashboard/basic-chat", label: "Basic Chat", icon: "chat" }, // Hidden
-  { href: "/dashboard/combos", label: "Combo & Vision Adapter", icon: "layers" },
+  {
+    href: "/dashboard/combos",
+    label: "Combo & Vision Adapter",
+    icon: "layers",
+  },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
   { href: "/dashboard/quota", label: "Quota Tracker", icon: "data_usage" },
   { href: "/dashboard/token-saver", label: "Token Saver", icon: "savings" },
@@ -53,17 +69,22 @@ export default function Sidebar({ onClose }) {
   const INSTALL_CMD = UPDATER_CONFIG.installCmdLatest;
 
   useEffect(() => {
-    useSettingsStore.getState().fetchSettings().then((data) => {
-      if (data?.enableTranslator) setEnableTranslator(true);
-    });
+    useSettingsStore
+      .getState()
+      .fetchSettings()
+      .then((data) => {
+        if (data?.enableTranslator) setEnableTranslator(true);
+      });
   }, []);
 
   // Lazy check for new npm version in background after initial render
   useEffect(() => {
     const timer = setTimeout(() => {
       fetch("/api/version")
-        .then(res => res.json())
-        .then(data => { if (data.hasUpdate) setUpdateInfo(data); })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.hasUpdate) setUpdateInfo(data);
+        })
         .catch(() => {});
     }, 2500);
     return () => clearTimeout(timer);
@@ -71,7 +92,9 @@ export default function Sidebar({ onClose }) {
 
   const isActive = (href) => {
     if (href === "/dashboard/endpoint") {
-      return pathname === "/dashboard" || pathname.startsWith("/dashboard/endpoint");
+      return (
+        pathname === "/dashboard" || pathname.startsWith("/dashboard/endpoint")
+      );
     }
     return pathname.startsWith(href);
   };
@@ -84,7 +107,11 @@ export default function Sidebar({ onClose }) {
 
   // Triggered by Copy button inside ManualUpdatePanel: copy + countdown + shutdown
   const handleCopyAndShutdown = async () => {
-    try { await navigator.clipboard.writeText(INSTALL_CMD); } catch { /* clipboard blocked */ }
+    try {
+      await navigator.clipboard.writeText(INSTALL_CMD);
+    } catch {
+      /* clipboard blocked */
+    }
     copy(INSTALL_CMD);
     let remaining = UPDATER_CONFIG.shutdownCountdownSec;
     setShutdownCountdown(remaining);
@@ -107,7 +134,6 @@ export default function Sidebar({ onClose }) {
   // Note: legacy updater poll removed. New flow: copy install cmd + shutdown server,
   // user runs the command manually in another terminal.
 
-
   return (
     <>
       <aside className="flex w-72 flex-col border-r border-border-subtle bg-vibrancy backdrop-blur-xl transition-colors duration-300 min-h-full">
@@ -122,13 +148,17 @@ export default function Sidebar({ onClose }) {
         <div className="px-6 py-4 flex flex-col gap-2">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="flex items-center justify-center size-9 rounded-[10px] bg-gradient-to-br from-brand-500 to-brand-700 shadow-[var(--shadow-warm)]">
-              <span className="material-symbols-outlined text-white text-[20px]">hub</span>
+              <span className="material-symbols-outlined text-white text-[20px]">
+                hub
+              </span>
             </div>
             <div className="flex flex-col">
               <h1 className="text-lg font-semibold tracking-tight text-text-main">
                 {APP_CONFIG.name}
               </h1>
-              <span className="text-xs text-text-muted">v{APP_CONFIG.version}</span>
+              <span className="text-xs text-text-muted">
+                v{APP_CONFIG.version}
+              </span>
             </div>
           </Link>
           {updateInfo && (
@@ -168,13 +198,15 @@ export default function Sidebar({ onClose }) {
                 "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
                 isActive(item.href)
                   ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                  : "text-text-muted hover:bg-surface-2 hover:text-text-main",
               )}
             >
               <span
                 className={cn(
                   "material-symbols-outlined text-[18px]",
-                  isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors"
+                  isActive(item.href)
+                    ? "fill-1"
+                    : "group-hover:text-primary transition-colors",
                 )}
               >
                 {item.icon}
@@ -196,30 +228,45 @@ export default function Sidebar({ onClose }) {
                 "w-full flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
                 pathname.startsWith("/dashboard/media-providers")
                   ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                  : "text-text-muted hover:bg-surface-2 hover:text-text-main",
               )}
             >
-              <span className="material-symbols-outlined text-[18px]">perm_media</span>
-              <span className="text-[13px] font-medium flex-1 text-left">Media Providers</span>
-              <span className="material-symbols-outlined text-[14px] transition-transform" style={{ transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+              <span className="material-symbols-outlined text-[18px]">
+                perm_media
+              </span>
+              <span className="text-[13px] font-medium flex-1 text-left">
+                Media Providers
+              </span>
+              <span
+                className="material-symbols-outlined text-[14px] transition-transform"
+                style={{
+                  transform: mediaOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              >
                 expand_more
               </span>
             </button>
             {mediaOpen && (
               <div className="pl-4">
-                {MEDIA_PROVIDER_KINDS.filter((k) => VISIBLE_MEDIA_KINDS.includes(k.id)).map((kind) => (
+                {MEDIA_PROVIDER_KINDS.filter((k) =>
+                  VISIBLE_MEDIA_KINDS.includes(k.id),
+                ).map((kind) => (
                   <Link
                     key={kind.id}
                     href={`/dashboard/media-providers/${kind.id}`}
                     onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 px-4 py-1 rounded-lg transition-all group",
-                      pathname.startsWith(`/dashboard/media-providers/${kind.id}`)
+                      pathname.startsWith(
+                        `/dashboard/media-providers/${kind.id}`,
+                      )
                         ? "bg-primary/10 text-primary"
-                        : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                        : "text-text-muted hover:bg-surface-2 hover:text-text-main",
                     )}
                   >
-                    <span className="material-symbols-outlined text-[16px]">{kind.icon}</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      {kind.icon}
+                    </span>
                     <span className="text-sm">{kind.label}</span>
                   </Link>
                 ))}
@@ -231,10 +278,12 @@ export default function Sidebar({ onClose }) {
                     "flex items-center gap-3 px-4 py-1 rounded-lg transition-all group",
                     pathname.startsWith(COMBINED_WEB_ITEM.href)
                       ? "bg-primary/10 text-primary"
-                      : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                      : "text-text-muted hover:bg-surface-2 hover:text-text-main",
                   )}
                 >
-                  <span className="material-symbols-outlined text-[16px]">{COMBINED_WEB_ITEM.icon}</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    {COMBINED_WEB_ITEM.icon}
+                  </span>
                   <span className="text-sm">{COMBINED_WEB_ITEM.label}</span>
                 </Link>
               </div>
@@ -249,13 +298,15 @@ export default function Sidebar({ onClose }) {
                   "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
                   isActive(item.href)
                     ? "bg-primary/10 text-primary"
-                    : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                    : "text-text-muted hover:bg-surface-2 hover:text-text-main",
                 )}
               >
                 <span
                   className={cn(
                     "material-symbols-outlined text-[18px]",
-                    isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors"
+                    isActive(item.href)
+                      ? "fill-1"
+                      : "group-hover:text-primary transition-colors",
                   )}
                 >
                   {item.icon}
@@ -266,7 +317,8 @@ export default function Sidebar({ onClose }) {
 
             {/* Debug items (inside System section, before Settings) */}
             {debugItems.map((item) => {
-              const show = item.href !== "/dashboard/translator" || enableTranslator;
+              const show =
+                item.href !== "/dashboard/translator" || enableTranslator;
               return show ? (
                 <Link
                   key={item.href}
@@ -276,13 +328,15 @@ export default function Sidebar({ onClose }) {
                     "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
                     isActive(item.href)
                       ? "bg-primary/10 text-primary"
-                      : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                      : "text-text-muted hover:bg-surface-2 hover:text-text-main",
                   )}
                 >
                   <span
                     className={cn(
                       "material-symbols-outlined text-[18px]",
-                      isActive(item.href) ? "fill-1" : "group-hover:text-primary transition-colors"
+                      isActive(item.href)
+                        ? "fill-1"
+                        : "group-hover:text-primary transition-colors",
                     )}
                   >
                     {item.icon}
@@ -292,43 +346,6 @@ export default function Sidebar({ onClose }) {
               ) : null;
             })}
 
-            {/* Remote */}
-            <a
-              href="https://9remote.cc"
-              target="_blank"
-              rel="noreferrer"
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group w-full",
-                "text-text-muted hover:bg-surface-2 hover:text-text-main"
-              )}
-            >
-              <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
-                computer
-              </span>
-              <span className="text-[13px] font-medium">9Remote</span>
-              <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-[3px] bg-orange-500/15 text-orange-400">
-                HOT
-              </span>
-            </a>
-
-            {/* 9English */}
-            <a
-              href="https://9english.net/"
-              target="_blank"
-              rel="noreferrer"
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group w-full",
-                "text-text-muted hover:bg-surface-2 hover:text-text-main"
-              )}
-            >
-              <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
-                translate
-              </span>
-              <span className="text-[13px] font-medium">9English</span>
-            </a>
-
             {/* Settings */}
             <Link
               href="/dashboard/profile"
@@ -337,13 +354,15 @@ export default function Sidebar({ onClose }) {
                 "flex items-center gap-3 px-3 py-1 rounded-lg transition-all group",
                 isActive("/dashboard/profile")
                   ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-surface-2 hover:text-text-main"
+                  : "text-text-muted hover:bg-surface-2 hover:text-text-main",
               )}
             >
               <span
                 className={cn(
                   "material-symbols-outlined text-[18px]",
-                  isActive("/dashboard/profile") ? "fill-1" : "group-hover:text-primary transition-colors"
+                  isActive("/dashboard/profile")
+                    ? "fill-1"
+                    : "group-hover:text-primary transition-colors",
                 )}
               >
                 settings
@@ -352,9 +371,7 @@ export default function Sidebar({ onClose }) {
             </Link>
           </div>
         </nav>
-
       </aside>
-
 
       {/* Update Confirmation Modal */}
       <ConfirmModal
@@ -384,11 +401,20 @@ export default function Sidebar({ onClose }) {
           ) : (
             <div className="text-center p-8">
               <div className="flex items-center justify-center size-16 rounded-full bg-red-500/20 text-red-500 mx-auto mb-4">
-                <span className="material-symbols-outlined text-[32px]">power_off</span>
+                <span className="material-symbols-outlined text-[32px]">
+                  power_off
+                </span>
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">Server Disconnected</h2>
-              <p className="text-text-muted mb-6">The proxy server has been stopped.</p>
-              <Button variant="secondary" onClick={() => globalThis.location.reload()}>
+              <h2 className="text-xl font-semibold text-white mb-2">
+                Server Disconnected
+              </h2>
+              <p className="text-text-muted mb-6">
+                The proxy server has been stopped.
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => globalThis.location.reload()}
+              >
                 Reload Page
               </Button>
             </div>
@@ -403,16 +429,28 @@ Sidebar.propTypes = {
   onClose: PropTypes.func,
 };
 
-function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdown, onCancel, countdown, isDisconnected }) {
+function ManualUpdatePanel({
+  latestVersion,
+  installCmd,
+  copied,
+  onCopyAndShutdown,
+  onCancel,
+  countdown,
+  isDisconnected,
+}) {
   const isCountingDown = countdown > 0;
   return (
     <div className="w-full max-w-lg rounded-xl bg-neutral-900/95 border border-white/10 p-6 text-white">
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center justify-center size-11 rounded-full bg-amber-500/20 text-amber-400">
-          <span className="material-symbols-outlined text-[24px]">content_copy</span>
+          <span className="material-symbols-outlined text-[24px]">
+            content_copy
+          </span>
         </div>
         <div>
-          <h2 className="text-lg font-semibold">Update 9Router{latestVersion ? ` to v${latestVersion}` : ""}</h2>
+          <h2 className="text-lg font-semibold">
+            Update 9Router{latestVersion ? ` to v${latestVersion}` : ""}
+          </h2>
           <p className="text-xs text-white/60">
             {isDisconnected
               ? "Server stopped. Paste the command into a terminal to install."
@@ -425,26 +463,53 @@ function ManualUpdatePanel({ latestVersion, installCmd, copied, onCopyAndShutdow
 
       <p className="text-sm text-white/80 mb-2">Install command:</p>
       <div className="w-full px-3 py-2 rounded bg-white/5 mb-4">
-        <code className="text-xs font-mono text-amber-400 break-all">{installCmd}</code>
+        <code className="text-xs font-mono text-amber-400 break-all">
+          {installCmd}
+        </code>
       </div>
 
       <ol className="text-xs text-white/70 space-y-1 list-decimal list-inside mb-4">
-        <li>Click <strong>Copy & Shutdown</strong> below.</li>
+        <li>
+          Click <strong>Copy & Shutdown</strong> below.
+        </li>
         <li>Paste the command into your terminal and press Enter.</li>
-        <li>Run <code className="px-1 rounded bg-white/10 text-green-400">9router</code> again after install.</li>
+        <li>
+          Run{" "}
+          <code className="px-1 rounded bg-white/10 text-green-400">
+            9router
+          </code>{" "}
+          again after install.
+        </li>
       </ol>
 
       {isDisconnected ? (
-        <Button variant="secondary" fullWidth onClick={() => globalThis.location.reload()}>
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={() => globalThis.location.reload()}
+        >
           Reload Page
         </Button>
       ) : (
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={onCancel} disabled={isCountingDown}>
+          <Button
+            variant="secondary"
+            onClick={onCancel}
+            disabled={isCountingDown}
+          >
             Cancel
           </Button>
-          <Button variant="primary" fullWidth onClick={onCopyAndShutdown} disabled={isCountingDown}>
-            {copied ? "✓ Copied — shutting down..." : isCountingDown ? `Shutting down in ${countdown}s` : "Copy & Shutdown"}
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={onCopyAndShutdown}
+            disabled={isCountingDown}
+          >
+            {copied
+              ? "✓ Copied — shutting down..."
+              : isCountingDown
+                ? `Shutting down in ${countdown}s`
+                : "Copy & Shutdown"}
           </Button>
         </div>
       )}
