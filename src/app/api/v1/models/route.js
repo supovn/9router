@@ -422,6 +422,7 @@ export async function buildModelsList(kindFilter, options = {}) {
           id: `${alias}/${model.id}`,
           object: "model",
           owned_by: alias,
+          ...(model.name ? { name: model.name } : {}),
           capabilities: getCapabilitiesForModel(alias, model.id),
         });
       }
@@ -441,6 +442,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         id: `${providerAlias}/${modelId}`,
         object: "model",
         owned_by: providerAlias,
+        ...(customModel.name ? { name: customModel.name } : {}),
       });
     }
   } else {
@@ -464,7 +466,11 @@ export async function buildModelsList(kindFilter, options = {}) {
       const staticModelKindById = new Map(
         providerModels.map((m) => [m.id, modelKind(m)])
       );
+      const staticModelNameById = new Map(
+        providerModels.filter((m) => m?.name).map((m) => [m.id, m.name])
+      );
       let liveModelKindById = new Map();
+      let liveModelNameById = new Map();
       let liveCapabilitiesById = new Map();
 
       let rawModelIds = hasExplicitEnabledModels
@@ -495,6 +501,11 @@ export async function buildModelsList(kindFilter, options = {}) {
                 .filter((m) => m?.id)
                 .map((m) => [m.id, modelKind(m)])
             );
+            liveModelNameById = new Map(
+              live.models
+                .filter((m) => m?.id && m.name)
+                .map((m) => [m.id, m.name])
+            );
             liveCapabilitiesById = new Map(
               live.models
                 .filter((m) => m?.id && m.capabilities)
@@ -522,6 +533,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         .filter((modelId) => typeof modelId === "string" && modelId.trim() !== "");
 
       const customModelKindById = new Map();
+      const customModelNameById = new Map();
       const customModelIds = customModels
         .filter((m) => {
           if (!m?.id) return false;
@@ -534,7 +546,10 @@ export async function buildModelsList(kindFilter, options = {}) {
         })
         .map((m) => {
           const modelId = String(m.id).trim();
-          if (modelId) customModelKindById.set(modelId, getModelKind(m) || LLM_KIND);
+          if (modelId) {
+            customModelKindById.set(modelId, getModelKind(m) || LLM_KIND);
+            if (m.name) customModelNameById.set(modelId, m.name);
+          }
           return modelId;
         })
         .filter((modelId) => modelId !== "");
@@ -579,6 +594,10 @@ export async function buildModelsList(kindFilter, options = {}) {
           object: "model",
           owned_by: outputAlias,
         };
+        // Human-readable display name from the registry (or live catalog /
+        // custom model). Clients show this instead of the raw id.
+        const name = customModelNameById.get(modelId) || liveModelNameById.get(modelId) || staticModelNameById.get(modelId);
+        if (name) model.name = name;
         // Live-catalog resolvers (kiro/qoder/github/clinepass) mostly only return
         // { id, name } — no per-model capability data. Fall back to the same
         // pattern-matched capabilities the dashboard uses (useModelCaps.js) so
