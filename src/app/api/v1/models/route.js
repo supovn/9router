@@ -1,4 +1,4 @@
-import { PROVIDER_MODELS, PROVIDER_ID_TO_ALIAS, getModelKind } from "@/shared/constants/models";
+import { PROVIDER_MODELS, PROVIDER_ID_TO_ALIAS, getModelKind, findModelName } from "@/shared/constants/models";
 import {
   ALIAS_TO_ID,
   AI_PROVIDERS,
@@ -244,13 +244,20 @@ async function fetchCompatibleModelIds(connection) {
     const data = await response.json();
     const rawModels = parseOpenAIStyleModels(data);
 
-    return Array.from(
-      new Set(
-        rawModels
-          .map((model) => model?.id || model?.name || model?.model)
-          .filter((modelId) => typeof modelId === "string" && modelId.trim() !== "")
-      )
-    );
+    // Returns [{ id, name? }]. Upstream catalogs usually carry a display name
+    // (`name` on OpenAI-style lists, `display_name` on Anthropic's), so keep it
+    // for /v1/models instead of throwing it away with the id-only projection.
+    const seen = new Set();
+    const out = [];
+    for (const model of rawModels) {
+      const id = model?.id || model?.name || model?.model;
+      if (typeof id !== "string" || id.trim() === "" || seen.has(id)) continue;
+      seen.add(id);
+      const name = [model?.display_name, model?.displayName, model?.name]
+        .find((v) => typeof v === "string" && v.trim() !== "" && v !== id);
+      out.push(name ? { id, name } : { id });
+    }
+    return out;
   } catch {
     return [];
   }
@@ -472,6 +479,16 @@ export async function buildModelsList(kindFilter, options = {}) {
       let liveModelKindById = new Map();
       let liveModelNameById = new Map();
       let liveCapabilitiesById = new Map();
+      let compatModelNameById = new Map();
+
+      // Upstream/live catalogs may return ids already prefixed with the alias;
+      // emitted ids are bare, so name lookups must be keyed the same way.
+      const stripAliasPrefix = (modelId) => {
+        if (modelId.startsWith(`${outputAlias}/`)) return modelId.slice(outputAlias.length + 1);
+        if (modelId.startsWith(`${staticAlias}/`)) return modelId.slice(staticAlias.length + 1);
+        if (modelId.startsWith(`${providerId}/`)) return modelId.slice(providerId.length + 1);
+        return modelId;
+      };
 
       let rawModelIds = hasExplicitEnabledModels
         ? Array.from(
@@ -484,7 +501,11 @@ export async function buildModelsList(kindFilter, options = {}) {
         : providerModels.map((model) => model.id);
 
       if (isCompatibleProvider && rawModelIds.length === 0 && !skipDynamicFetch) {
-        rawModelIds = await fetchCompatibleModelIds(conn);
+        const compatModels = await fetchCompatibleModelIds(conn);
+        rawModelIds = compatModels.map((m) => m.id);
+        compatModelNameById = new Map(
+          compatModels.filter((m) => m.name).map((m) => [stripAliasPrefix(m.id), m.name])
+        );
       }
 
       // Config-driven live catalog override (e.g. Kiro returns dynamic
@@ -504,7 +525,7 @@ export async function buildModelsList(kindFilter, options = {}) {
             liveModelNameById = new Map(
               live.models
                 .filter((m) => m?.id && m.name)
-                .map((m) => [m.id, m.name])
+                .map((m) => [stripAliasPrefix(m.id), m.name])
             );
             liveCapabilitiesById = new Map(
               live.models
@@ -518,18 +539,7 @@ export async function buildModelsList(kindFilter, options = {}) {
       }
 
       const modelIds = rawModelIds
-        .map((modelId) => {
-          if (modelId.startsWith(`${outputAlias}/`)) {
-            return modelId.slice(outputAlias.length + 1);
-          }
-          if (modelId.startsWith(`${staticAlias}/`)) {
-            return modelId.slice(staticAlias.length + 1);
-          }
-          if (modelId.startsWith(`${providerId}/`)) {
-            return modelId.slice(providerId.length + 1);
-          }
-          return modelId;
-        })
+        .map(stripAliasPrefix)
         .filter((modelId) => typeof modelId === "string" && modelId.trim() !== "");
 
       const customModelKindById = new Map();
@@ -594,9 +604,16 @@ export async function buildModelsList(kindFilter, options = {}) {
           object: "model",
           owned_by: outputAlias,
         };
-        // Human-readable display name from the registry (or live catalog /
-        // custom model). Clients show this instead of the raw id.
-        const name = customModelNameById.get(modelId) || liveModelNameById.get(modelId) || staticModelNameById.get(modelId);
+        // Human-readable display name. Precedence: user-defined custom model →
+        // live catalog → upstream compatible catalog → static registry (exact,
+        // then findModelName's tolerant match for "(suffix)" / kiro dash-dot ids).
+        const registryName = findModelName(staticAlias, modelId);
+        const name =
+          customModelNameById.get(modelId)
+          || liveModelNameById.get(modelId)
+          || compatModelNameById.get(modelId)
+          || staticModelNameById.get(modelId)
+          || (registryName && registryName !== modelId ? registryName : undefined);
         if (name) model.name = name;
         // Live-catalog resolvers (kiro/qoder/github/clinepass) mostly only return
         // { id, name } — no per-model capability data. Fall back to the same
@@ -632,12 +649,18 @@ export async function buildModelsList(kindFilter, options = {}) {
 
       // Web search/fetch — provider IS the model, expose as {alias}/search and/or {alias}/fetch with explicit kind
       const providerInfo = AI_PROVIDERS[providerId];
+      // "Brave Search" must not become "Brave Search Search".
+      const providerDisplayName = typeof providerInfo?.name === "string" ? providerInfo.name.trim() : "";
+      const serviceName = (suffix) => providerDisplayName
+        ? (new RegExp(`${suffix}$`, "i").test(providerDisplayName) ? providerDisplayName : `${providerDisplayName} ${suffix}`)
+        : undefined;
       if (kindFilter.includes("webSearch") && providerInfo?.searchConfig) {
         models.push({
           id: `${outputAlias}/search`,
           object: "model",
           kind: "webSearch",
           owned_by: outputAlias,
+          ...(serviceName("Search") ? { name: serviceName("Search") } : {}),
         });
       }
       if (kindFilter.includes("webFetch") && providerInfo?.fetchConfig) {
@@ -646,16 +669,23 @@ export async function buildModelsList(kindFilter, options = {}) {
           object: "model",
           kind: "webFetch",
           owned_by: outputAlias,
+          ...(serviceName("Fetch") ? { name: serviceName("Fetch") } : {}),
         });
       }
     }
   }
 
   const dedupedModels = [];
-  const seenModelIds = new Set();
+  const seenModelIds = new Map();
   for (const model of models) {
-    if (!model?.id || seenModelIds.has(model.id)) continue;
-    seenModelIds.add(model.id);
+    if (!model?.id) continue;
+    const kept = seenModelIds.get(model.id);
+    if (kept) {
+      // First entry wins, but a later duplicate may carry the display name.
+      if (!kept.name && model.name) kept.name = model.name;
+      continue;
+    }
+    seenModelIds.set(model.id, model);
     dedupedModels.push(model);
   }
 
