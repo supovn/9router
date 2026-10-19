@@ -1,13 +1,14 @@
 import { buildModelsList } from "../route.js";
 import { getKeyAccessContext, filterModelsListForKey } from "@/sse/services/keyAccess.js";
+import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 
-// URL slug → service kind(s). `web` covers both webSearch and webFetch.
+// URL slug → service kind(s), derived from the service-kind registry so a new
+// kind (video, music, systemone, …) is listable without touching this route.
+// camelCase ids become kebab-case slugs (imageToText → image-to-text);
+// `web` additionally covers both webSearch and webFetch.
+const toSlug = (id) => id.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 const KIND_SLUG_MAP = {
-  "image": ["image"],
-  "tts": ["tts"],
-  "stt": ["stt"],
-  "embedding": ["embedding"],
-  "image-to-text": ["imageToText"],
+  ...Object.fromEntries(MEDIA_PROVIDER_KINDS.map((k) => [toSlug(k.id), [k.id]])),
   "web": ["webSearch", "webFetch"],
 };
 

@@ -19,6 +19,14 @@ function sanitizeCaps(caps) {
 // select and this validator must agree on one set, so neither owns a copy.
 // Unknown or mistyped values are silently dropped, the same policy
 // sanitizeCaps applies to capability keys.
+// Optional upstream vendor label (e.g. "claude", "openai", "bytedance").
+// Lower-cased slug, bounded length; anything else is dropped.
+function sanitizeVendor(vendor) {
+  if (typeof vendor !== "string") return null;
+  const v = vendor.trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v) ? v : null;
+}
+
 function sanitizeTransport(transport, type) {
   if (type !== "stt" || !isSttTransport(transport)) return null;
   return transport.trim();
@@ -38,13 +46,14 @@ export async function GET() {
 // POST /api/models/custom - Add custom model
 export async function POST(request) {
   try {
-    const { providerAlias, id, type, name, caps, transport } = await request.json();
+    const { providerAlias, id, type, name, caps, transport, vendor } = await request.json();
     if (!providerAlias || !id) {
       return NextResponse.json({ error: "providerAlias and id required" }, { status: 400 });
     }
     const cleanCaps = sanitizeCaps(caps);
     const cleanTransport = sanitizeTransport(transport, type || "llm");
-    const added = await addCustomModel({ providerAlias, id, type: type || "llm", name, ...(cleanCaps ? { caps: cleanCaps } : {}), ...(cleanTransport ? { transport: cleanTransport } : {}) });
+    const cleanVendor = sanitizeVendor(vendor);
+    const added = await addCustomModel({ providerAlias, id, type: type || "llm", name, ...(cleanCaps ? { caps: cleanCaps } : {}), ...(cleanTransport ? { transport: cleanTransport } : {}), ...(cleanVendor ? { vendor: cleanVendor } : {}) });
     return NextResponse.json({ success: true, added });
   } catch (error) {
     console.log("Error adding custom model:", error);

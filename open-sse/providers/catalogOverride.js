@@ -21,6 +21,11 @@ export const CATALOG_VERSION = 2;
 const EMPTY = { models: {}, providers: {} };
 let cache = EMPTY;
 let cachedMtime = -1;
+// Re-stat the file at most this often. Every capability lookup calls load()
+// twice; without a throttle one /v1/models request issued >1000 statSync calls.
+// invalidateCatalog() (run right after a sync) bypasses the throttle.
+const STAT_INTERVAL_MS = 1000;
+let lastStatAt = -Infinity;
 
 // "zai-org/GLM-4.6V:free" -> "glm-4.6v"
 function baseId(model) {
@@ -30,6 +35,9 @@ function baseId(model) {
 }
 
 function load() {
+  const now = Date.now();
+  if (now - lastStatAt < STAT_INTERVAL_MS) return cache;
+  lastStatAt = now;
   let mtime;
   try {
     mtime = fs.statSync(CATALOG_FILE).mtimeMs;
@@ -72,6 +80,7 @@ export function getCatalogLimits(provider, model) {
 // Force a re-read on the next lookup (called right after a sync writes the file).
 export function invalidateCatalog() {
   cachedMtime = -1;
+  lastStatAt = -Infinity;
 }
 
 // Hand the reader to capabilities.js. That module is bundled into the browser

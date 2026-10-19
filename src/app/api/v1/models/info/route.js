@@ -1,8 +1,13 @@
 import { PROVIDER_MODELS } from "open-sse/config/providerModels.js";
-import { AI_PROVIDERS, ALIAS_TO_ID } from "@/shared/constants/providers";
+import { AI_PROVIDERS, ALIAS_TO_ID, MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import { getModelKind } from "@/shared/constants/models";
 
 const KIND_ENDPOINT = {
+  // Service-kind registry first (video, music, systemone, …); the explicit
+  // entries below keep the historical paths this endpoint has always published.
+  ...Object.fromEntries(
+    MEDIA_PROVIDER_KINDS.filter((k) => k.endpoint?.path).map((k) => [k.id, k.endpoint.path])
+  ),
   llm: "/v1/chat/completions",
   image: "/v1/images/generations",
   tts: "/v1/audio/speech",
@@ -21,6 +26,7 @@ function buildInfo({ alias, providerId, model, kind, providerInfo }) {
     name: model.name || model.id,
     kind,
     owned_by: alias,
+    vendor: model.vendor || providerId,
     endpoint: KIND_ENDPOINT[kind] || null,
   };
   if (model.params) out.params = model.params;

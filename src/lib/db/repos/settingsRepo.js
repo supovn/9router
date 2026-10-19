@@ -66,10 +66,33 @@ const DEFAULT_SETTINGS = {
   providerOverrides: {},
 };
 
+// In-process cache of the raw settings row. Every chat request reads settings
+// several times (auth gate, combo strategy, account selection, chatCore flags);
+// without a cache each read is a SELECT + JSON.parse + defaults merge. The
+// cache is replaced on every write in this process (updateSettings, importDb)
+// and additionally expires after a short TTL so a write from another process
+// sharing the same DB file is picked up within seconds.
+const SETTINGS_CACHE_TTL_MS = 2000;
+let cachedRaw = null;
+let cachedRawAt = 0;
+
+export function invalidateSettingsCache() {
+  cachedRaw = null;
+  cachedRawAt = 0;
+}
+
+function setSettingsCache(raw) {
+  cachedRaw = raw;
+  cachedRawAt = Date.now();
+}
+
 async function readRaw() {
+  if (cachedRaw && Date.now() - cachedRawAt < SETTINGS_CACHE_TTL_MS) return cachedRaw;
   const db = await getAdapter();
   const row = db.get(`SELECT data FROM settings WHERE id = 1`);
-  return row ? parseJson(row.data, {}) : {};
+  const raw = row ? parseJson(row.data, {}) : {};
+  setSettingsCache(raw);
+  return raw;
 }
 
 // Merge raw settings with defaults; backward-compat for missing keys
@@ -119,6 +142,7 @@ export async function updateSettings(updates) {
       [stringifyJson(next)],
     );
   });
+  setSettingsCache(next);
   return mergeWithDefaults(next);
 }
 

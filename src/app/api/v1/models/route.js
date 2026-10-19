@@ -430,6 +430,9 @@ export async function buildModelsList(kindFilter, options = {}) {
           object: "model",
           owned_by: alias,
           ...(model.name ? { name: model.name } : {}),
+          // Upstream provider of this model: an explicit registry/custom
+          // `vendor` wins, else the provider id behind the alias.
+          vendor: model.vendor || providerId,
           capabilities: getCapabilitiesForModel(alias, model.id),
         });
       }
@@ -450,6 +453,7 @@ export async function buildModelsList(kindFilter, options = {}) {
         object: "model",
         owned_by: providerAlias,
         ...(customModel.name ? { name: customModel.name } : {}),
+        vendor: customModel.vendor || ALIAS_TO_PROVIDER_ID[providerAlias] || providerAlias,
       });
     }
   } else {
@@ -469,26 +473,36 @@ export async function buildModelsList(kindFilter, options = {}) {
       const isCompatibleProvider =
         isOpenAICompatibleProvider(providerId) || isAnthropicCompatibleProvider(providerId);
 
-      // Build kind lookup for static models so we can filter even when only IDs are exposed
-      const staticModelKindById = new Map(
-        providerModels.map((m) => [m.id, modelKind(m)])
-      );
-      const staticModelNameById = new Map(
-        providerModels.filter((m) => m?.name).map((m) => [m.id, m.name])
-      );
-      let liveModelKindById = new Map();
-      let liveModelNameById = new Map();
-      let liveCapabilitiesById = new Map();
-      let compatModelNameById = new Map();
-
-      // Upstream/live catalogs may return ids already prefixed with the alias;
-      // emitted ids are bare, so name lookups must be keyed the same way.
+      // Registry, upstream and live catalogs may carry ids already prefixed with
+      // the alias/provider (e.g. nvidia's "nvidia/nemotron-…", fal-ai's
+      // "fal-ai/flux/schnell"). Emitted ids are bare, so every lookup map below
+      // must be keyed the same way or kind/name resolution silently misses.
       const stripAliasPrefix = (modelId) => {
         if (modelId.startsWith(`${outputAlias}/`)) return modelId.slice(outputAlias.length + 1);
         if (modelId.startsWith(`${staticAlias}/`)) return modelId.slice(staticAlias.length + 1);
         if (modelId.startsWith(`${providerId}/`)) return modelId.slice(providerId.length + 1);
         return modelId;
       };
+
+      // Build kind/name lookups for static models so we can filter even when only IDs are exposed
+      const staticModelKindById = new Map();
+      const staticModelNameById = new Map();
+      const staticModelVendorById = new Map();
+      const indexStaticModel = (key, m) => {
+        if (!staticModelKindById.has(key)) staticModelKindById.set(key, modelKind(m));
+        if (m.name && !staticModelNameById.has(key)) staticModelNameById.set(key, m.name);
+        if (m.vendor && !staticModelVendorById.has(key)) staticModelVendorById.set(key, m.vendor);
+      };
+      for (const m of providerModels) {
+        if (!m?.id) continue;
+        indexStaticModel(m.id, m);
+        const bare = stripAliasPrefix(m.id);
+        if (bare !== m.id) indexStaticModel(bare, m);
+      }
+      let liveModelKindById = new Map();
+      let liveModelNameById = new Map();
+      let liveCapabilitiesById = new Map();
+      let compatModelNameById = new Map();
 
       let rawModelIds = hasExplicitEnabledModels
         ? Array.from(
@@ -544,6 +558,7 @@ export async function buildModelsList(kindFilter, options = {}) {
 
       const customModelKindById = new Map();
       const customModelNameById = new Map();
+      const customModelVendorById = new Map();
       const customModelIds = customModels
         .filter((m) => {
           if (!m?.id) return false;
@@ -559,6 +574,7 @@ export async function buildModelsList(kindFilter, options = {}) {
           if (modelId) {
             customModelKindById.set(modelId, getModelKind(m) || LLM_KIND);
             if (m.name) customModelNameById.set(modelId, m.name);
+            if (m.vendor) customModelVendorById.set(modelId, m.vendor);
           }
           return modelId;
         })
@@ -605,16 +621,24 @@ export async function buildModelsList(kindFilter, options = {}) {
           owned_by: outputAlias,
         };
         // Human-readable display name. Precedence: user-defined custom model →
-        // live catalog → upstream compatible catalog → static registry (exact,
-        // then findModelName's tolerant match for "(suffix)" / kiro dash-dot ids).
-        const registryName = findModelName(staticAlias, modelId);
-        const name =
+        // live catalog → upstream compatible catalog → static registry. All are
+        // O(1) Map hits; findModelName (a linear registry scan that tolerates
+        // "(suffix)" / kiro dash-dot ids) runs only when every map misses.
+        let name =
           customModelNameById.get(modelId)
           || liveModelNameById.get(modelId)
           || compatModelNameById.get(modelId)
-          || staticModelNameById.get(modelId)
-          || (registryName && registryName !== modelId ? registryName : undefined);
+          || staticModelNameById.get(modelId);
+        if (!name) {
+          const registryName = findModelName(staticAlias, modelId);
+          if (registryName && registryName !== modelId) name = registryName;
+        }
         if (name) model.name = name;
+        // Upstream provider of this model. A user-declared `vendor` on a custom
+        // model (or one set in the registry) wins; otherwise it is the provider
+        // id of the connection serving it — the alias in `owned_by` may be a
+        // user prefix, this is the stable identifier.
+        model.vendor = customModelVendorById.get(modelId) || staticModelVendorById.get(modelId) || providerId;
         // Live-catalog resolvers (kiro/qoder/github/clinepass) mostly only return
         // { id, name } — no per-model capability data. Fall back to the same
         // pattern-matched capabilities the dashboard uses (useModelCaps.js) so
@@ -651,16 +675,22 @@ export async function buildModelsList(kindFilter, options = {}) {
       const providerInfo = AI_PROVIDERS[providerId];
       // "Brave Search" must not become "Brave Search Search".
       const providerDisplayName = typeof providerInfo?.name === "string" ? providerInfo.name.trim() : "";
-      const serviceName = (suffix) => providerDisplayName
-        ? (new RegExp(`${suffix}$`, "i").test(providerDisplayName) ? providerDisplayName : `${providerDisplayName} ${suffix}`)
-        : undefined;
+      const serviceName = (suffix) => {
+        if (!providerDisplayName) return undefined;
+        return providerDisplayName.toLowerCase().endsWith(suffix.toLowerCase())
+          ? providerDisplayName
+          : `${providerDisplayName} ${suffix}`;
+      };
+      const searchName = serviceName("Search");
+      const fetchName = serviceName("Fetch");
       if (kindFilter.includes("webSearch") && providerInfo?.searchConfig) {
         models.push({
           id: `${outputAlias}/search`,
           object: "model",
           kind: "webSearch",
           owned_by: outputAlias,
-          ...(serviceName("Search") ? { name: serviceName("Search") } : {}),
+          ...(searchName ? { name: searchName } : {}),
+          vendor: providerId,
         });
       }
       if (kindFilter.includes("webFetch") && providerInfo?.fetchConfig) {
@@ -669,7 +699,8 @@ export async function buildModelsList(kindFilter, options = {}) {
           object: "model",
           kind: "webFetch",
           owned_by: outputAlias,
-          ...(serviceName("Fetch") ? { name: serviceName("Fetch") } : {}),
+          ...(fetchName ? { name: fetchName } : {}),
+          vendor: providerId,
         });
       }
     }
@@ -683,6 +714,7 @@ export async function buildModelsList(kindFilter, options = {}) {
     if (kept) {
       // First entry wins, but a later duplicate may carry the display name.
       if (!kept.name && model.name) kept.name = model.name;
+      if (!kept.vendor && model.vendor) kept.vendor = model.vendor;
       continue;
     }
     seenModelIds.set(model.id, model);

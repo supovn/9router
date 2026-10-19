@@ -6,7 +6,7 @@ import { KEY_ACCESS_UNRESTRICTED } from "@/shared/constants/keyAccess.js";
 
 // Settings
 export {
-  getSettings, updateSettings, isCloudEnabled, getCloudUrl, exportSettings,
+  getSettings, updateSettings, isCloudEnabled, getCloudUrl, exportSettings, invalidateSettingsCache,
 } from "./repos/settingsRepo.js";
 
 // Provider connections
@@ -172,6 +172,8 @@ export async function importDb(payload) {
       db.run(`INSERT OR REPLACE INTO kv(scope, key, value) VALUES('pricing', ?, ?)`, [provider, stringifyJson(models || {})]);
     }
   });
+  const { invalidateSettingsCache } = await import("./repos/settingsRepo.js");
+  invalidateSettingsCache();
 
   return await exportDb();
 }

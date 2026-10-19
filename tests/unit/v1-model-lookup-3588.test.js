@@ -68,4 +68,19 @@ describe("GET /v1/models/{id}", () => {
       code: "model_not_found",
     });
   });
+
+  it.each([
+    ["video", ["video"]],
+    ["music", ["music"]],
+    ["systemone", ["systemone"]],
+    ["image-to-text", ["imageToText"]],
+    ["web", ["webSearch", "webFetch"]],
+  ])("lists /v1/models/%s by service kind", async (slug, kinds) => {
+    mocks.buildModelsList.mockResolvedValue([]);
+    const response = await GET(new Request(`http://localhost/v1/models/${slug}`), params([slug]));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ object: "list", data: [] });
+    expect(mocks.buildModelsList).toHaveBeenCalledWith(kinds);
+  });
 });
+
