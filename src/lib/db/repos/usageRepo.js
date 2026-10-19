@@ -252,6 +252,7 @@ export async function saveRequestUsage(entry) {
     const completionTokens = tokens.completion_tokens || tokens.output_tokens || 0;
 
     let inserted = false;
+    let writtenDateKey = null;
 
     // All 3 writes (history insert, daily upsert, lifetime counter) in ONE transaction.
     // better-sqlite3 is sync → no JS yield mid-transaction → no race in same process.
@@ -291,6 +292,7 @@ export async function saveRequestUsage(entry) {
       );
 
       const dateKey = getLocalDateKey(entry.timestamp);
+      writtenDateKey = dateKey;
       const row = db.get(`SELECT data FROM usageDaily WHERE dateKey = ?`, [dateKey]);
       const day = row ? parseJson(row.data, {}) : {
         requests: 0, promptTokens: 0, completionTokens: 0, cost: 0,
@@ -307,6 +309,9 @@ export async function saveRequestUsage(entry) {
     });
 
     if (inserted) {
+      // Past-day rollups are cached; a late write (e.g. a request that started
+      // before midnight) changes one of those days.
+      if (writtenDateKey && writtenDateKey < getLocalDateKey()) invalidateUsageStatsCache();
       pushToRing(entry);
       scheduleStatsEvent("update", 250);
     }
@@ -339,13 +344,121 @@ function loadDaysInRange(adapter, maxDays) {
   if (maxDays == null) {
     return adapter.all(`SELECT dateKey, data FROM usageDaily ORDER BY dateKey ASC`);
   }
-  const today = new Date();
-  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - maxDays + 1);
-  const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}-${String(cutoff.getDate()).padStart(2, "0")}`;
+  const cutoffKey = getCutoffDateKey(maxDays);
   return adapter.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ? ORDER BY dateKey ASC`, [cutoffKey]);
 }
 
-export async function getUsageStats(period = "all") {
+// ─── Past-day rollup cache (getUsageStats daily-summary path) ──────────────
+// A day's usageDaily row only changes while requests are still landing on it,
+// which in practice is today. Re-parsing every past day on each stats refresh
+// cost ~40ms of synchronous event-loop time for a year of history, and the
+// dashboard stream triggers a refresh up to 4x/s per open tab. Past days are
+// therefore merged once into a single "pseudo-day" (same shape as a usageDaily
+// row) and reused; only rows dated today or later are read live.
+//
+// Entries are merged per (key + descriptive fields), not per key alone: a
+// day's byAccount is keyed by connectionId only, and its rawModel/provider are
+// whatever that day's last request used, so the same key can belong to a
+// different display row on different days. Each merged entry records `_key`
+// (the original key) and `_lastDateKey` (the latest day it appeared), which
+// the aggregation loop uses in place of the per-day key and date.
+//
+// Invalidation: a write dated before today (saveRequestUsage), a new local day
+// (part of the cache key), an explicit invalidateUsageStatsCache(), or the
+// safety TTL for writers this process does not see.
+const PAST_ROLLUP_TTL_MS = 5 * 60 * 1000;
+const PAST_ROLLUP_SECTIONS = ["byProvider", "byModel", "byAccount", "byApiKey", "byEndpoint"];
+const ROLLUP_COUNTER_FIELDS = new Set(["requests", "promptTokens", "completionTokens", "cachedTokens", "cost"]);
+
+function rollupIdentity(key, v) {
+  let id = key;
+  for (const [field, value] of Object.entries(v)) {
+    if (!ROLLUP_COUNTER_FIELDS.has(field)) id += `\u0000${field}=${value === undefined ? "\u0001" : JSON.stringify(value)}`;
+  }
+  return id;
+}
+const pastRollupCache = new Map(); // `${cutoffKey}|${todayKey}` -> { builtAt, rollup }
+
+export function invalidateUsageStatsCache() {
+  pastRollupCache.clear();
+}
+
+function getCutoffDateKey(maxDays) {
+  if (maxDays == null) return null;
+  const today = new Date();
+  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - maxDays + 1);
+  return `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}-${String(cutoff.getDate()).padStart(2, "0")}`;
+}
+
+function mergeDayIntoRollup(acc, day, dateKey) {
+  acc.promptTokens += day.promptTokens || 0;
+  acc.completionTokens += day.completionTokens || 0;
+  acc.cachedTokens += day.cachedTokens || 0;
+  acc.cost += day.cost || 0;
+  for (const section of PAST_ROLLUP_SECTIONS) {
+    const target = acc[section];
+    for (const [key, v] of Object.entries(day[section] || {})) {
+      const id = rollupIdentity(key, v);
+      let t = target[id];
+      if (!t) {
+        t = target[id] = { ...v, requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0, _key: key, _lastDateKey: dateKey };
+      }
+      t.requests += v.requests || 0;
+      t.promptTokens += v.promptTokens || 0;
+      t.completionTokens += v.completionTokens || 0;
+      t.cachedTokens += v.cachedTokens || 0;
+      t.cost += v.cost || 0;
+      if (dateKey > t._lastDateKey) t._lastDateKey = dateKey;
+    }
+  }
+}
+
+// Rollup of usageDaily rows with cutoffKey <= dateKey < todayKey, or null when
+// there are none. The returned object is shared and must be treated read-only.
+function getPastDaysRollup(adapter, cutoffKey, todayKey) {
+  const cacheKey = `${cutoffKey || "*"}|${todayKey}`;
+  const hit = pastRollupCache.get(cacheKey);
+  if (hit && Date.now() - hit.builtAt < PAST_ROLLUP_TTL_MS) return hit.rollup;
+
+  const rows = cutoffKey
+    ? adapter.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ? AND dateKey < ? ORDER BY dateKey ASC`, [cutoffKey, todayKey])
+    : adapter.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey < ? ORDER BY dateKey ASC`, [todayKey]);
+
+  let rollup = null;
+  if (rows.length) {
+    rollup = {
+      promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0,
+      byProvider: {}, byModel: {}, byAccount: {}, byApiKey: {}, byEndpoint: {},
+    };
+    for (const row of rows) mergeDayIntoRollup(rollup, parseJson(row.data, {}) || {}, row.dateKey);
+  }
+
+  // Entries for a previous local day can never be hit again; keep the map small.
+  for (const key of pastRollupCache.keys()) {
+    if (!key.endsWith(`|${todayKey}`)) pastRollupCache.delete(key);
+  }
+  pastRollupCache.set(cacheKey, { builtAt: Date.now(), rollup });
+  return rollup;
+}
+
+// Concurrent callers for the same period share one computation. Every open
+// dashboard tab refreshes on the same stats event; without this each tab ran
+// its own full aggregation. Only in-flight calls are shared — a call made after
+// one finishes always recomputes, so freshness is unchanged. Callers must treat
+// the returned object as read-only (all current callers only serialize it).
+const inflightUsageStats = new Map();
+
+export function getUsageStats(period = "all") {
+  const existing = inflightUsageStats.get(period);
+  if (existing) return existing;
+  const pending = computeUsageStats(period).finally(() => {
+    inflightUsageStats.delete(period);
+  });
+  inflightUsageStats.set(period, pending);
+  return pending;
+}
+
+async function computeUsageStats(period) {
   const db = await getAdapter();
 
   const [{ getProviderConnections }, { getApiKeys }, { getProviderNodes }] = await Promise.all([
@@ -452,17 +565,25 @@ export async function getUsageStats(period = "all") {
   if (useDailySummary) {
     const periodDays = { "7d": 7, "30d": 30, "60d": 60 };
     const maxDays = periodDays[period] || null;
-    const dayRows = loadDaysInRange(db, maxDays);
+    const todayKey = getLocalDateKey();
+    const cutoffKey = getCutoffDateKey(maxDays);
 
-    for (const dr of dayRows) {
-      const dateKey = dr.dateKey;
-      const day = parseJson(dr.data, {});
+    // Past days come pre-merged from cache; today (and any future-dated row from
+    // clock skew) is read live. Order stays ascending by date, as before.
+    const dayEntries = [];
+    const pastRollup = getPastDaysRollup(db, cutoffKey, todayKey);
+    if (pastRollup) dayEntries.push({ dayKey: null, day: pastRollup });
+    const liveRows = db.all(`SELECT dateKey, data FROM usageDaily WHERE dateKey >= ? ORDER BY dateKey ASC`, [todayKey]);
+    for (const dr of liveRows) dayEntries.push({ dayKey: dr.dateKey, day: parseJson(dr.data, {}) || {} });
+
+    for (const { dayKey, day } of dayEntries) {
       stats.totalPromptTokens += day.promptTokens || 0;
       stats.totalCompletionTokens += day.completionTokens || 0;
       stats.totalCachedTokens += day.cachedTokens || 0;
       stats.totalCost += day.cost || 0;
 
-      for (const [prov, p] of Object.entries(day.byProvider || {})) {
+      for (const [rawProv, p] of Object.entries(day.byProvider || {})) {
+        const prov = p._key ?? rawProv;
         if (!stats.byProvider[prov]) stats.byProvider[prov] = { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, cost: 0 };
         stats.byProvider[prov].requests += p.requests || 0;
         stats.byProvider[prov].promptTokens += p.promptTokens || 0;
@@ -471,7 +592,9 @@ export async function getUsageStats(period = "all") {
         stats.byProvider[prov].cost += p.cost || 0;
       }
 
-      for (const [mk, m] of Object.entries(day.byModel || {})) {
+      for (const [rawMk, m] of Object.entries(day.byModel || {})) {
+        const mk = m._key ?? rawMk;
+        const dateKey = m._lastDateKey || dayKey;
         const rawModel = m.rawModel || mk.split("|")[0];
         const provider = m.provider || mk.split("|")[1] || "";
         const statsKey = provider ? `${rawModel} (${provider})` : rawModel;
@@ -487,7 +610,9 @@ export async function getUsageStats(period = "all") {
         if (dateKey > (stats.byModel[statsKey].lastUsed || "")) stats.byModel[statsKey].lastUsed = dateKey;
       }
 
-      for (const [connId, a] of Object.entries(day.byAccount || {})) {
+      for (const [rawConnId, a] of Object.entries(day.byAccount || {})) {
+        const connId = a._key ?? rawConnId;
+        const dateKey = a._lastDateKey || dayKey;
         const accountName = connectionMap[connId] || `Account ${connId.slice(0, 8)}...`;
         const rawModel = a.rawModel || "";
         const provider = a.provider || "";
@@ -504,7 +629,9 @@ export async function getUsageStats(period = "all") {
         if (dateKey > (stats.byAccount[accountKey].lastUsed || "")) stats.byAccount[accountKey].lastUsed = dateKey;
       }
 
-      for (const [akKey, ak] of Object.entries(day.byApiKey || {})) {
+      for (const [rawAkKey, ak] of Object.entries(day.byApiKey || {})) {
+        const akKey = ak._key ?? rawAkKey;
+        const dateKey = ak._lastDateKey || dayKey;
         const rawModel = ak.rawModel || "";
         const provider = ak.provider || "";
         const providerDisplayName = providerNodeNameMap[provider] || provider;
@@ -524,7 +651,9 @@ export async function getUsageStats(period = "all") {
         if (dateKey > (stats.byApiKey[akKey].lastUsed || "")) stats.byApiKey[akKey].lastUsed = dateKey;
       }
 
-      for (const [epKey, ep] of Object.entries(day.byEndpoint || {})) {
+      for (const [rawEpKey, ep] of Object.entries(day.byEndpoint || {})) {
+        const epKey = ep._key ?? rawEpKey;
+        const dateKey = ep._lastDateKey || dayKey;
         const endpoint = ep.endpoint || epKey.split("|")[0] || "Unknown";
         const rawModel = ep.rawModel || "";
         const provider = ep.provider || "";

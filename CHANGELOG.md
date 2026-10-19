@@ -3,6 +3,7 @@
 ## Performance
 - **Settings**: cache the raw settings row in-process (replaced on every write, 2s TTL for cross-process writes) so a chat request no longer re-reads and re-merges settings 3+ times from SQLite
 - **Account selection**: replace the single global selection mutex with a per-provider lock, and move settings/proxy resolution outside the critical section, so concurrent requests to different providers no longer queue behind each other
+- **Usage stats**: merge past days of `usageDaily` once and cache the rollup (invalidated on late writes, day rollover, and a 5-minute safety TTL), and share in-flight `getUsageStats` calls across callers, so each open dashboard tab no longer re-parses the whole usage history on every stats event (365 days: ~42 ms to ~9 ms per refresh; 3 tabs: ~117 ms to ~9 ms per event)
 
 # v0.5.104 (2026-10-15)
 
