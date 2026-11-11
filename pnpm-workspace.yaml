@@ -1,3 +1,8 @@
 allowBuilds:
-  better-sqlite3: set this to true or false
-  unrs-resolver: set this to true or false
+  better-sqlite3: true
+  unrs-resolver: false
+
+# Mirror of package.json "overrides" (npm-only field; pnpm ignores it).
+overrides:
+  dompurify: ^3.4.17
+  ip-address: ^10.7.4
