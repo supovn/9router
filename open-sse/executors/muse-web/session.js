@@ -91,8 +91,9 @@ export function toMuseCookies(header) {
   return parseCookiePairs(header).map(({ name, value }) => ({
     name,
     value,
-    domain: ".muse.ai",
-    path: "/",
+    // __Host- cookies are host-only: a Domain attribute makes CDP reject the whole
+    // batch ("Invalid cookie fields"), so scope them by URL instead.
+    ...(name.startsWith("__Host-") ? { url: "https://muse.ai/" } : { domain: ".muse.ai", path: "/" }),
     secure: true,
     httpOnly: false,
     sameSite: "Lax",
