@@ -260,11 +260,15 @@ function parseCookieString(raw, domain) {
       const name = pair.slice(0, eq).trim();
       const value = pair.slice(eq + 1).trim();
       if (!name || !value) return null;
+      // __Host- cookies are host-only: a Domain attribute makes CDP reject the whole
+      // batch ("Invalid cookie fields"), so scope them by URL instead.
+      const scope = name.startsWith("__Host-")
+        ? { url: `https://${domain.replace(/^\./, "")}/` }
+        : { domain: domain.startsWith(".") ? domain : `.${domain}`, path: "/" };
       return {
         name,
         value,
-        domain: domain.startsWith(".") ? domain : `.${domain}`,
-        path: "/",
+        ...scope,
         expires: -1,
         httpOnly: false,
         secure: true,
@@ -495,6 +499,9 @@ export function getBrowserPoolMetrics() {
 export function __resetBrowserPoolMetricsForTest() {
   state.metrics = createBrowserPoolMetrics();
 }
+
+/** Test-only: the Cookie-header → Playwright cookie conversion used to seed contexts. */
+export const __parseCookieStringForTest = parseCookieString;
 
 export async function readPageResponseBody(response) {
   const headers = {};
