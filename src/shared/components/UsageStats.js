@@ -12,6 +12,7 @@ function isLLMProvider(id) {
 }
 import Badge from "./Badge";
 import Card from "./Card";
+import Select from "./Select";
 import OverviewCards from "@/app/(dashboard)/dashboard/usage/components/OverviewCards";
 import UsageTable, { fmt, fmtTime } from "@/app/(dashboard)/dashboard/usage/components/UsageTable";
 import dynamic from "next/dynamic";
@@ -498,16 +499,14 @@ export default function UsageStats({ period: periodProp, setPeriod: setPeriodPro
       {/* Table with dropdown selector */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <select
+          <Select
+            size="sm"
+            className="w-full sm:w-auto"
+            options={TABLE_OPTIONS}
             value={tableView}
             onChange={(e) => setTableView(e.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-main focus:outline-none focus:ring-2 focus:ring-primary/50 sm:w-auto"
-            style={{ colorScheme: 'auto' }}
-          >
-            {TABLE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            aria-label="Usage table view"
+          />
           <div className="grid grid-cols-2 items-center gap-1 rounded-lg border border-border bg-bg-subtle p-1 sm:flex">
             <button
               onClick={() => setViewMode("costs")}

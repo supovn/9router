@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Select from "@/shared/components/Select";
+import Input from "@/shared/components/Input";
 import { readKeyPresets, upsertKeyPreset, deleteKeyPreset, subscribeKeyPresets } from "./cliEndpointPresets";
 
 const CUSTOM_VALUE = "__custom__";
@@ -81,16 +83,13 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <div className="flex items-center gap-2">
-        <select
+        <Select
+          size="sm"
           value={mode}
           onChange={handleSelect}
-          className="flex-1 min-w-0 px-2 py-2 bg-surface rounded text-xs border border-border focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-          {canSave && <option value={SAVE_VALUE}>+ Save current as...</option>}
-        </select>
+          options={canSave ? [...options, { value: SAVE_VALUE, label: "+ Save current as..." }] : options}
+          className="flex-1 min-w-0"
+        />
         {isSaved && (
           <button type="button" onClick={handleDeleteSaved} className="p-1 text-text-muted hover:text-red-500 rounded transition-colors shrink-0" title="Delete saved key">
             <span className="material-symbols-outlined text-[14px]">delete</span>
@@ -98,12 +97,12 @@ export default function ApiKeySelect({ value, onChange, apiKeys = [], cloudEnabl
         )}
       </div>
       {isCustom && (
-        <input
-          type="text"
+        <Input
+          size="sm"
           value={inputValue}
           onChange={handleCustomInput}
           placeholder="sk-..."
-          className="w-full min-w-0 px-2 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
+          className="w-full min-w-0"
         />
       )}
     </div>

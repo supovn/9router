@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getDefaultPricing, formatCost } from "open-sse/providers/pricing.js";
+import Input from "./Input";
 
 export default function PricingModal({ isOpen, onClose, onSave }) {
   const [pricingData, setPricingData] = useState({});
@@ -148,13 +149,15 @@ export default function PricingModal({ isOpen, onClose, onSave }) {
                               <td className="px-3 py-2 font-medium">{model}</td>
                               {pricingFields.map(field => (
                                 <td key={field} className="px-3 py-2">
-                                  <input
+                                  <Input
                                     type="number"
+                                    size="sm"
+                                    className="w-20"
+                                    inputClassName="text-right"
                                     step="0.01"
                                     min="0"
                                     value={pricingData[provider][model][field] || 0}
                                     onChange={(e) => handlePricingChange(provider, model, field, e.target.value)}
-                                    className="w-20 px-2 py-1 text-right bg-bg-base border border-border rounded focus:outline-none focus:border-primary"
                                   />
                                 </td>
                               ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Button, ManualConfigModal, ComboFormModal, McpMarketplaceModal, ModelSelectModal } from "@/shared/components";
+import { Card, Button, Input, ManualConfigModal, ComboFormModal, McpMarketplaceModal, ModelSelectModal } from "@/shared/components";
 import Image from "next/image";
 import BaseUrlSelect from "./BaseUrlSelect";
 import { rememberEndpoint } from "./cliEndpointPresets";
@@ -565,26 +565,20 @@ export default function CoworkToolCard({
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] text-text-muted font-medium">Name</label>
-                <input
-                  type="text"
-                  placeholder="my-mcp"
-                  value={addMcpForm.name}
-                  onChange={(e) => setAddMcpForm((f) => ({ ...f, name: e.target.value.replace(/\s+/g, "-").toLowerCase() }))}
-                  className="px-2 py-1.5 rounded border border-border bg-surface text-xs outline-none focus:border-primary"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] text-text-muted font-medium">SSE URL</label>
-                <input
-                  type="text"
-                  placeholder="https://your-mcp-server.com/sse"
-                  value={addMcpForm.url}
-                  onChange={(e) => setAddMcpForm((f) => ({ ...f, url: e.target.value }))}
-                  className="px-2 py-1.5 rounded border border-border bg-surface text-xs outline-none focus:border-primary"
-                />
-              </div>
+              <Input
+                size="sm"
+                label="Name"
+                placeholder="my-mcp"
+                value={addMcpForm.name}
+                onChange={(e) => setAddMcpForm((f) => ({ ...f, name: e.target.value.replace(/\s+/g, "-").toLowerCase() }))}
+              />
+              <Input
+                size="sm"
+                label="SSE URL"
+                placeholder="https://your-mcp-server.com/sse"
+                value={addMcpForm.url}
+                onChange={(e) => setAddMcpForm((f) => ({ ...f, url: e.target.value }))}
+              />
             </div>
 
             <div className="flex gap-2 justify-end">

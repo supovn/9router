@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
+import { CONTROL_HEIGHTS, CONTROL_ICON_SIZES } from "./formStyles";
 
 const variants = {
   primary: "bg-brand-500 hover:bg-brand-600 text-white shadow-sm disabled:bg-surface-3 disabled:text-text-muted",
@@ -11,11 +12,12 @@ const variants = {
   success: "bg-green-600 hover:bg-green-700 text-white shadow-sm disabled:bg-surface-3 disabled:text-text-muted",
 };
 
+// Heights match Input/Select of the same size (see formStyles)
 const sizes = {
-  xs: "h-6 px-2.5 text-[11px] rounded-[6px] gap-1.5",
-  sm: "h-7 px-3 text-xs rounded-[8px]",
-  md: "h-9 px-4 text-sm rounded-[10px]",
-  lg: "h-11 px-6 text-sm rounded-[10px]",
+  xs: `${CONTROL_HEIGHTS.xs} px-2.5 text-[11px] rounded-[6px] gap-1.5`,
+  sm: `${CONTROL_HEIGHTS.sm} px-3 text-xs rounded-lg`,
+  md: `${CONTROL_HEIGHTS.md} px-4 text-sm rounded-[10px]`,
+  lg: `${CONTROL_HEIGHTS.lg} px-6 text-sm rounded-[10px]`,
 };
 
 export default function Button({
@@ -30,6 +32,7 @@ export default function Button({
   className,
   ...props
 }) {
+  const iconSize = CONTROL_ICON_SIZES[size] || CONTROL_ICON_SIZES.md;
   return (
     <button
       className={cn(
@@ -44,13 +47,13 @@ export default function Button({
       {...props}
     >
       {loading ? (
-        <span className={cn("material-symbols-outlined animate-spin", size === "xs" ? "text-[14px]" : "text-[18px]")}>progress_activity</span>
+        <span className={cn("material-symbols-outlined animate-spin", iconSize)}>progress_activity</span>
       ) : icon ? (
-        <span className={cn("material-symbols-outlined", size === "xs" ? "text-[14px]" : "text-[18px]")}>{icon}</span>
+        <span className={cn("material-symbols-outlined", iconSize)}>{icon}</span>
       ) : null}
       {children}
       {iconRight && !loading && (
-        <span className={cn("material-symbols-outlined", size === "xs" ? "text-[14px]" : "text-[18px]")}>{iconRight}</span>
+        <span className={cn("material-symbols-outlined", iconSize)}>{iconRight}</span>
       )}
     </button>
   );

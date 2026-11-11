@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Button, Modal, Select, Toggle } from "@/shared/components";
+import { Button, Input, Modal, Select, Toggle } from "@/shared/components";
 import { CAPACITY_META, STT_TRANSPORT_META, STT_TRANSPORTS } from "@/shared/constants/models";
 
 const defaultCaps = () => Object.fromEntries(Object.keys(CAPACITY_META).map((key) => [key, false]));
@@ -70,13 +70,13 @@ export default function AddCustomModelModal({ isOpen, providerAlias, providerDis
         <div>
           <label className="text-sm font-medium mb-1.5 block">Model ID</label>
           <div className="flex gap-2">
-            <input
+            <Input
               type="text"
               value={modelId}
               onChange={(e) => { setModelId(e.target.value); setTestStatus(null); setTestError(""); }}
               onKeyDown={handleKeyDown}
               placeholder="e.g. claude-opus-4-5"
-              className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              className="flex-1 min-w-0"
               autoFocus
             />
             <Button

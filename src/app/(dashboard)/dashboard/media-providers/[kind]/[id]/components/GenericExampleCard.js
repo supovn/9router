@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/shared/components";
+import { Card, Input, Select } from "@/shared/components";
 import { AI_PROVIDERS, MEDIA_PROVIDER_KINDS, getProviderAlias, resolveProviderId } from "@/shared/constants/providers";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
@@ -264,23 +264,23 @@ export function GenericExampleCard({ providerId, kind }) {
         {/* Model selector — dropdown if presets exist, else manual input for media kinds */}
         {kindModels.length > 0 ? (
           <Row label="Model">
-            <select
+            <Select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              {kindModels.map((m) => (
-                <option key={m.id} value={m.id}>{m.name || m.id}</option>
-              ))}
-            </select>
+              options={kindModels.map((m) => ({ value: m.id, label: m.name || m.id }))}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
         ) : allowManualModel ? (
           <Row label="Model">
-            <input
+            <Input
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="Enter model id (provider-specific)"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              variant="outline"
+              className="w-full"
+              inputClassName="font-mono"
             />
           </Row>
         ) : null}
@@ -316,33 +316,33 @@ export function GenericExampleCard({ providerId, kind }) {
         {/* Connection picker - only show when 2+ connections (or any with email) */}
         {connections.length > 0 && (
           <Row label="Connection">
-            <select
+            <Select
               value={pinnedConnectionId}
               onChange={(e) => setPinnedConnectionId(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              <option value="">Auto (by priority)</option>
-              {connections.map((c) => {
-                const plan = c.providerSpecificData?.chatgptPlanType;
-                const label = c.email || c.name || c.id.slice(0, 8);
-                return (
-                  <option key={c.id} value={c.id}>
-                    {label}{plan ? ` [${plan}]` : ""}
-                  </option>
-                );
-              })}
-            </select>
+              options={[
+                { value: "", label: "Auto (by priority)" },
+                ...connections.map((c) => {
+                  const plan = c.providerSpecificData?.chatgptPlanType;
+                  const label = c.email || c.name || c.id.slice(0, 8);
+                  return { value: c.id, label: `${label}${plan ? ` [${plan}]` : ""}` };
+                }),
+              ]}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
         )}
 
         {/* Input */}
         <Row label={exConfig.inputLabel}>
           <div className="relative">
-            <input
+            <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={exConfig.inputPlaceholder}
-              className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              variant="outline"
+              className="w-full"
+              inputClassName="pr-7"
             />
             {input && (
               <button
@@ -360,11 +360,13 @@ export function GenericExampleCard({ providerId, kind }) {
         {kind === "systemone" && (
           <Row label="Question">
             <div className="relative">
-              <input
+              <Input
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Enter evaluation question or criteria"
-                className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                variant="outline"
+                className="w-full"
+                inputClassName="pr-7"
               />
               {question && (
                 <button
@@ -384,11 +386,13 @@ export function GenericExampleCard({ providerId, kind }) {
           <Row label="Ref Image (URL)">
             <div className="flex flex-col gap-2">
               <div className="relative">
-                <input
+                <Input
                   value={refImage}
                   onChange={(e) => setRefImage(e.target.value)}
                   placeholder={imageEditDefaults.image || "https://example.com/source.png"}
-                  className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  variant="outline"
+                  className="w-full"
+                  inputClassName="pr-7"
                 />
                 {refImage && (
                   <button
@@ -419,11 +423,13 @@ export function GenericExampleCard({ providerId, kind }) {
           <Row label="Mask (URL)">
             <div className="flex flex-col gap-2">
               <div className="relative">
-                <input
+                <Input
                   value={maskImage}
                   onChange={(e) => setMaskImage(e.target.value)}
                   placeholder={imageEditDefaults.mask_image || "https://example.com/mask.png"}
-                  className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  variant="outline"
+                  className="w-full"
+                  inputClassName="pr-7"
                 />
                 {maskImage && (
                   <button
@@ -456,31 +462,31 @@ export function GenericExampleCard({ providerId, kind }) {
           .map((f) => (
           <Row key={f.key} label={f.label}>
             {f.type === "select" ? (
-              <select
+              <Select
                 value={effectiveExtraValues[f.key] ?? ""}
                 onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-              >
-                {(f.options || []).map((opt) => (
-                  <option key={opt} value={opt}>{opt === "" ? "(default)" : opt}</option>
-                ))}
-              </select>
+                options={(f.options || []).map((opt) => ({ value: opt, label: opt === "" ? "(default)" : opt }))}
+                variant="outline"
+                className="w-full"
+              />
             ) : f.type === "text" ? (
-              <input
+              <Input
                 type="text"
                 value={extraValues[f.key] ?? ""}
                 placeholder={f.placeholder}
                 onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                variant="outline"
+                className="w-full"
               />
             ) : f.type === "image" ? (
               <div className="flex gap-2 items-center">
-                <input
+                <Input
                   type="text"
                   value={extraValues[f.key] ?? ""}
                   placeholder="https://… or click Upload"
                   onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
-                  className="flex-1 min-w-0 px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                  variant="outline"
+                  className="flex-1 min-w-0"
                 />
                 <label className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-border rounded-lg bg-background hover:bg-accent cursor-pointer transition-colors">
                   <span className="material-symbols-outlined text-[16px]">upload</span>
@@ -510,13 +516,14 @@ export function GenericExampleCard({ providerId, kind }) {
                 {extraValues[f.key] ? "Enabled" : "Disabled"}
               </label>
             ) : (
-              <input
+              <Input
                 type="number"
                 value={extraValues[f.key] ?? ""}
                 min={f.min}
                 max={f.max}
                 onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value === "" ? "" : Number(e.target.value) }))}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                variant="outline"
+                className="w-full"
               />
             )}
           </Row>
@@ -525,14 +532,16 @@ export function GenericExampleCard({ providerId, kind }) {
         {/* Output Format toggle (image only) — last */}
         {kind === "image" && (
           <Row label="Output Format">
-            <select
+            <Select
               value={imageOutputFormat}
               onChange={(e) => setImageOutputFormat(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              <option value="json">JSON (Base64)</option>
-              <option value="binary">Binary File</option>
-            </select>
+              options={[
+                { value: "json", label: "JSON (Base64)" },
+                { value: "binary", label: "Binary File" },
+              ]}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
         )}
 

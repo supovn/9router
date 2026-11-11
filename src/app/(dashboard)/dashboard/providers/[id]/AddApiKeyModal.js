@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Button, Badge, Input, Modal, Select } from "@/shared/components";
+import Textarea from "@/shared/components/Textarea";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 import { planBulkAdd } from "@/shared/utils/bulkAdd";
 
@@ -267,8 +268,8 @@ export default function AddApiKeyModal({ isOpen, provider, providerName, isCompa
                   : <>One key per line. Format: <code>name|apiKey</code> or just <code>apiKey</code> (auto-named by index).</>
               }
             </p>
-            <textarea
-              className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[140px] focus:outline-none focus:ring-1 focus:ring-primary"
+            <Textarea
+              textareaClassName="font-mono min-h-[140px]"
               placeholder={bulkPlaceholder}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}

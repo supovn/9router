@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Button, ModelSelectModal, ManualConfigModal } from "@/shared/components";
+import { Card, Button, Input, ModelSelectModal, ManualConfigModal, Select } from "@/shared/components";
 import Image from "next/image";
 import BaseUrlSelect from "./BaseUrlSelect";
 import { rememberEndpoint } from "./cliEndpointPresets";
@@ -591,26 +591,29 @@ export default function GenericCliToolCard({
                                 className="flex w-full flex-wrap items-center gap-1.5 rounded border border-border bg-bg-secondary px-2 py-1 text-xs text-text-main"
                               >
                                 <span className="min-w-0 flex-1 basis-40 truncate">{modelId}</span>
-                                <select
+                                <Select
+                                  size="sm"
                                   value={caps.contextWindow}
                                   onChange={(e) => setModelCap(modelId, "contextWindow", e.target.value)}
                                   title="Context window"
-                                  className="shrink-0 rounded border border-border bg-surface px-1 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary/50"
-                                >
-                                  {capOptions(PI_CONTEXT_WINDOWS, caps.contextWindow).map((n) => (
-                                    <option key={n} value={n}>{formatTokens(n)} ctx</option>
-                                  ))}
-                                </select>
-                                <select
+                                  aria-label="Context window"
+                                  options={capOptions(PI_CONTEXT_WINDOWS, caps.contextWindow).map((n) => ({
+                                    value: n,
+                                    label: `${formatTokens(n)} ctx`,
+                                  }))}
+                                  className="shrink-0"
+                                />
+                                <Select
+                                  size="sm"
                                   value={caps.maxTokens}
                                   onChange={(e) => setModelCap(modelId, "maxTokens", e.target.value)}
                                   title="Max output tokens"
-                                  className="rounded border border-border bg-surface px-1 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary/50"
-                                >
-                                  {capOptions(PI_MAX_TOKENS, caps.maxTokens).map((n) => (
-                                    <option key={n} value={n}>{formatTokens(n)} out</option>
-                                  ))}
-                                </select>
+                                  aria-label="Max output tokens"
+                                  options={capOptions(PI_MAX_TOKENS, caps.maxTokens).map((n) => ({
+                                    value: n,
+                                    label: `${formatTokens(n)} out`,
+                                  }))}
+                                />
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveModel(modelId)}
@@ -664,12 +667,13 @@ export default function GenericCliToolCard({
                     <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">Model</span>
                     <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
                     <div className="relative w-full min-w-0">
-                      <input
-                        type="text"
+                      <Input
+                        size="sm"
                         value={selectedModel}
                         onChange={(e) => setSelectedModel(e.target.value)}
                         placeholder="provider/model-id"
-                        className="w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
+                        className="w-full min-w-0"
+                        inputClassName="pr-7"
                       />
                       {selectedModel && (
                         <button

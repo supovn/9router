@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Modal, Button, Input } from "@/shared/components";
+import Textarea from "./Textarea";
 
 /**
  * Kiro Auth Method Selection Modal
@@ -559,11 +560,12 @@ export default function KiroAuthModal({ isOpen, onMethodSelect, onClose }) {
               <label className="block text-sm font-medium mb-2">
                 CLIProxyAPI Auth JSON <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <Textarea
                 value={cliProxyJson}
                 onChange={(e) => setCliProxyJson(e.target.value)}
                 placeholder={'{"auth_method":"external_idp","access_token":"...","refresh_token":"...","client_id":"...","token_endpoint":"https://login.microsoftonline.com/.../oauth2/v2.0/token","profile_arn":"...","scopes":"..."}'}
-                className="min-h-40 w-full rounded-md border border-border bg-background p-3 font-mono text-sm outline-none focus:border-primary"
+                className="w-full"
+                textareaClassName="min-h-40 font-mono"
               />
             </div>
 

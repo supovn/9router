@@ -749,8 +749,8 @@ export default function APIPageClient({ machineId }) {
           />
           {/* Cloudflare Tunnel */}
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-mono px-1.5 py-0.5 rounded shrink-0 min-w-[88px] text-center ${
-              tunnelEnabled ? "bg-primary/10 text-primary" : "bg-surface-2 text-text-muted"
+            <span className={`text-xs font-mono shrink-0 w-[88px] ${
+              tunnelEnabled ? "text-primary" : "text-text-muted"
             }`}>Tunnel</span>
             {tunnelEnabled && !tunnelLoading && tunnelReachable ? (
               <>
@@ -771,7 +771,7 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : tunnelEnabled && !tunnelLoading && !tunnelReachable ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                   {tunnelEverReachable ? "Tunnel reconnecting..." : "Tunnel checking..."}
                 </div>
@@ -785,7 +785,7 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : tunnelLoading ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-border bg-input text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                   {tunnelProgress || "Creating tunnel..."}
                 </div>
@@ -799,15 +799,15 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : tunnelStatus?.type === "error" ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
                   <span className="material-symbols-outlined text-sm">error</span>
                   {tunnelStatus.message}
                 </div>
-                <Button size="sm" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>Enable</Button>
+                <Button size="md" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>Enable</Button>
               </>
             ) : tunnelChecking ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-border bg-input text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                   Checking...
                 </div>
@@ -821,7 +821,7 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : (
               <Button
-                size="sm"
+                size="md"
                 icon="cloud_upload"
                 onClick={() => {
                   if (isLoginUnsafe) {
@@ -841,8 +841,8 @@ export default function APIPageClient({ machineId }) {
           </div>
           {/* Tailscale */}
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-mono px-1.5 py-0.5 rounded shrink-0 min-w-[88px] text-center ${
-              tsEnabled ? "bg-primary/10 text-primary" : "bg-surface-2 text-text-muted"
+            <span className={`text-xs font-mono shrink-0 w-[88px] ${
+              tsEnabled ? "text-primary" : "text-text-muted"
             }`}>Tailscale</span>
             {tsEnabled && !tsLoading && tsReachable ? (
               <>
@@ -863,7 +863,7 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : tsEnabled && !tsLoading && !tsReachable ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-amber-300 dark:border-amber-800 bg-amber-500/5 text-sm text-amber-600 dark:text-amber-400">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                   {tsEverReachable ? "Tailscale reconnecting..." : "Tailscale checking..."}
                 </div>
@@ -877,13 +877,13 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : (tsLoading || tsConnecting) ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-border bg-input text-sm text-text-muted">
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                   {tsProgress || "Connecting..."}
                 </div>
                 {tsAuthUrl && (
                   <Button
-                    size="sm"
+                    size="md"
                     icon="open_in_new"
                     onClick={() => window.open(tsAuthUrl, "tailscale_auth", "width=600,height=700,noopener,noreferrer")}
                   >
@@ -900,15 +900,15 @@ export default function APIPageClient({ machineId }) {
               </>
             ) : tsStatus?.type === "error" ? (
               <>
-                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
+                <div className="flex-1 flex items-center gap-2 min-h-9 px-3 py-1.5 rounded-[10px] border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
                   <span className="material-symbols-outlined text-sm">error</span>
                   {tsStatus.message}
                 </div>
-                <Button size="sm" icon="vpn_lock" onClick={handleOpenTsModal}>Enable</Button>
+                <Button size="md" icon="vpn_lock" onClick={handleOpenTsModal}>Enable</Button>
               </>
             ) : (
               <Button
-                size="sm"
+                size="md"
                 icon="vpn_lock"
                 onClick={() => {
                   if (isLoginUnsafe) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/shared/components";
+import { Card, Input, Select } from "@/shared/components";
 import { getProviderAlias } from "@/shared/constants/providers";
 import { getModelKind } from "@/shared/constants/models";
 import { getModelsByProviderId } from "@/shared/constants/models";
@@ -129,23 +129,23 @@ export function SttExampleCard({ providerId }) {
         {/* Model */}
         {sttModels.length > 0 ? (
           <Row label="Model">
-            <select
+            <Select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              {sttModels.map((m) => (
-                <option key={m.id} value={m.id}>{m.name || m.id}</option>
-              ))}
-            </select>
+              options={sttModels.map((m) => ({ value: m.id, label: m.name || m.id }))}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
         ) : (
           <Row label="Model">
-            <input
+            <Input
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               placeholder="Enter model id"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              variant="outline"
+              className="w-full"
+              inputClassName="font-mono"
             />
           </Row>
         )}
@@ -198,11 +198,13 @@ export function SttExampleCard({ providerId }) {
         {/* Language (if model supports) */}
         {allowedParams.includes("language") && (
           <Row label="Language">
-            <input
+            <Input
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               placeholder="e.g. en, vi, ja (auto-detect if empty)"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+              variant="outline"
+              className="w-full"
+              inputClassName="font-mono"
             />
           </Row>
         )}
@@ -210,11 +212,12 @@ export function SttExampleCard({ providerId }) {
         {/* Prompt (if model supports) */}
         {allowedParams.includes("prompt") && (
           <Row label="Prompt">
-            <input
+            <Input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="optional context to improve accuracy"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              variant="outline"
+              className="w-full"
             />
           </Row>
         )}
@@ -222,7 +225,7 @@ export function SttExampleCard({ providerId }) {
         {/* Temperature (if model supports) */}
         {allowedParams.includes("temperature") && (
           <Row label="Temperature">
-            <input
+            <Input
               type="number"
               step="0.1"
               min="0"
@@ -230,7 +233,8 @@ export function SttExampleCard({ providerId }) {
               value={temperature}
               onChange={(e) => setTemperature(e.target.value)}
               placeholder="0 - 1 (default 0)"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+              variant="outline"
+              className="w-full"
             />
           </Row>
         )}
@@ -238,29 +242,31 @@ export function SttExampleCard({ providerId }) {
         {/* Response format (if model supports) */}
         {allowedParams.includes("response_format") && (
           <Row label="Response Format">
-            <select
+            <Select
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              {responseFormats.map((format) => <option key={format} value={format}>{format}</option>)}
-            </select>
+              options={responseFormats.map((format) => ({ value: format, label: format }))}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
         )}
 
         {/* Scribe-style extras — shown only when the model declares the param */}
         {allowedParams.includes("timestamps_granularity") && (
           <Row label="Timestamps">
-            <select
+            <Select
               value={granularity}
               onChange={(e) => setGranularity(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              <option value="">provider default</option>
-              <option value="word">word</option>
-              <option value="character">character</option>
-              <option value="none">none</option>
-            </select>
+              options={[
+                { value: "", label: "provider default" },
+                { value: "word", label: "word" },
+                { value: "character", label: "character" },
+                { value: "none", label: "none" },
+              ]}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
         )}
 
@@ -294,7 +300,7 @@ export function SttExampleCard({ providerId }) {
 
         {allowedParams.includes("num_speakers") && (
           <Row label="Speaker count">
-            <input
+            <Input
               type="number"
               step="1"
               min="1"
@@ -303,7 +309,8 @@ export function SttExampleCard({ providerId }) {
               onChange={(e) => setNumSpeakers(e.target.value)}
               disabled={diarize}
               placeholder="auto-detect"
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary disabled:opacity-50"
+              variant="outline"
+              className="w-full"
             />
           </Row>
         )}

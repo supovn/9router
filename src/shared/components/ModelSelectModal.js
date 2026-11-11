@@ -5,6 +5,7 @@ import { applyQoderModelNames } from "@/shared/utils/providerCustomModels";
 import { useState, useMemo, useEffect } from "react";
 import PropTypes from "prop-types";
 import Modal from "./Modal";
+import Input from "./Input";
 import ProviderIcon from "./ProviderIcon";
 import CapacityBadges from "./CapacityBadges";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
@@ -640,11 +641,12 @@ export default function ModelSelectModal({
       {/* Search & batch actions */}
       <div className="mb-3 space-y-2">
         <div className="relative">
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[16px]">
-            search
-          </span>
-          <input
+          <Input
             type="text"
+            size="sm"
+            icon="search"
+            className="w-full"
+            inputClassName="pr-20"
             placeholder={
               allowProviderWildcard
                 ? "Search models (e.g. claude -haiku, oc/*, /regex/)..."
@@ -652,7 +654,6 @@ export default function ModelSelectModal({
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-20 py-1.5 bg-surface border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {parsedQuery.isRegex && (

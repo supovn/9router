@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle, ConfirmModal } from "@/shared/components";
+import { Badge, Button, Card, CardSkeleton, Input, Modal, Toggle, ConfirmModal, Select } from "@/shared/components";
+import Textarea from "@/shared/components/Textarea";
 import { useNotificationStore } from "@/store/notificationStore";
 import { filterProxyPools, getVisibleProxyPoolSelection, updateProxyPoolSelection } from "@/shared/utils/proxyPoolSelection";
 
@@ -704,19 +705,21 @@ export default function ProxyPoolsPage() {
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-text-muted">
-            Status
-            <select
+          <div className="flex items-center gap-2 text-xs text-text-muted">
+            <span aria-hidden="true">Status</span>
+            <Select
+              size="sm"
+              options={[
+                { value: "all", label: "All" },
+                { value: "enabled", label: "Enabled" },
+                { value: "disabled", label: "Disabled" },
+              ]}
               value={statusFilter}
               disabled={bulkBusy || healthChecking}
               onChange={(event) => { setStatusFilter(event.target.value); clearSelection(); }}
-              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-text-main"
-            >
-              <option value="all">All</option>
-              <option value="enabled">Enabled</option>
-              <option value="disabled">Disabled</option>
-            </select>
-          </label>
+              aria-label="Status"
+            />
+          </div>
           {visiblePools.length > 0 && (
             <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer">
               <input
@@ -875,18 +878,16 @@ export default function ProxyPoolsPage() {
         onClose={closeBatchImportModal}
       >
         <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium text-text-main mb-1 block">Paste Proxy List (One per line)</label>
-            <textarea
-              value={batchImportText}
-              onChange={(e) => setBatchImportText(e.target.value)}
-              placeholder={"http://user:pass@127.0.0.1:7897\n127.0.0.1:7897:user:pass"}
-              className="w-full min-h-[180px] py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all"
-            />
-            <p className="text-xs text-text-muted mt-1">
-              Supported formats: protocol://user:pass@host:port, host:port:user:pass
-            </p>
-          </div>
+          <Textarea
+            label="Paste Proxy List (One per line)"
+            hint="Supported formats: protocol://user:pass@host:port, host:port:user:pass"
+            variant="outline"
+            className="w-full"
+            textareaClassName="min-h-[180px]"
+            value={batchImportText}
+            onChange={(e) => setBatchImportText(e.target.value)}
+            placeholder={"http://user:pass@127.0.0.1:7897\n127.0.0.1:7897:user:pass"}
+          />
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button fullWidth onClick={handleBatchImport} disabled={!batchImportText.trim() || importing}>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Button, Modal } from "@/shared/components";
+import Textarea from "@/shared/components/Textarea";
 import { translate } from "@/i18n/runtime";
 
 const PLACEHOLDER = `[
@@ -92,8 +93,8 @@ export default function BulkImportCodexModal({ isOpen, onClose, onSuccess }) {
           )}
         </p>
 
-        <textarea
-          className="w-full rounded border border-accent/30 bg-sidebar p-2 text-sm font-mono resize-y min-h-[240px] focus:outline-none focus:ring-1 focus:ring-primary"
+        <Textarea
+          textareaClassName="font-mono min-h-[240px]"
           placeholder={PLACEHOLDER}
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}

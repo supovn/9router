@@ -1609,13 +1609,15 @@ export default function ProviderDetailPage() {
                 {providerStrategy === "round-robin" && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-text-muted">Sticky:</span>
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       value={providerStickyLimit}
                       onChange={(e) => handleStickyLimitChange(e.target.value)}
                       placeholder="1"
-                      className="w-14 px-2 py-1 text-xs border border-border rounded-md bg-background focus:outline-none focus:border-primary"
+                      size="sm"
+                      variant="outline"
+                      className="w-14"
                     />
                   </div>
                 )}
@@ -1806,16 +1808,16 @@ export default function ProviderDetailPage() {
               {"Available Models"}
             </h2>
             {providerThinkingLevels && (
-              <select
+              <Select
+                size="sm"
+                options={providerThinkingLevels.map((opt) => ({
+                  value: opt,
+                  label: `Thinking: ${opt.charAt(0).toUpperCase() + opt.slice(1)}`,
+                }))}
                 value={thinkingMode}
                 onChange={(e) => handleThinkingModeChange(e.target.value)}
                 title="Appends (level) suffix to copied model names"
-                className="rounded-md border border-border bg-background px-2 py-1 text-xs focus:border-primary focus:outline-none"
-              >
-                {providerThinkingLevels.map((opt) => (
-                  <option key={opt} value={opt}>{`Thinking: ${opt.charAt(0).toUpperCase() + opt.slice(1)}`}</option>
-                ))}
-              </select>
+              />
             )}
           </div>
           {!isCompatible && (() => {

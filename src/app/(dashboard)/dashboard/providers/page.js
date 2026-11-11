@@ -8,6 +8,7 @@ import {
   Badge,
   Button,
   Toggle,
+  Select,
 } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import { getProviderIconSrc } from "@/shared/utils/providerIcon";
@@ -405,18 +406,13 @@ export default function ProvidersPage() {
   return (
     <div className="flex min-w-0 flex-col gap-6 px-1 sm:px-0">
       <div className="flex items-center justify-end">
-        <select
+        <Select
+          size="sm"
+          options={STATUS_FILTER_OPTIONS}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-8 rounded-lg border border-black/10 bg-black/[0.02] px-2 text-xs text-text-primary outline-none transition-colors hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/10"
           aria-label="Filter providers by connection status"
-        >
-          {STATUS_FILTER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        />
       </div>
 
       {!hasAnyResult && (
@@ -433,7 +429,7 @@ export default function ProvidersPage() {
       {/* Custom Providers (OpenAI/Anthropic Compatible) — dynamic */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2 leading-tight">
             Custom Providers (OpenAI/Anthropic Compatible){" "}
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:flex sm:w-auto">
@@ -486,7 +482,7 @@ export default function ProvidersPage() {
       {oauthEntries.length > 0 && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2 leading-tight">
             OAuth Providers
           </h2>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
@@ -494,7 +490,7 @@ export default function ProvidersPage() {
             <button
               onClick={() => handleBatchTest("oauth")}
               disabled={!!testingMode}
-              className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
+              className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 h-8 text-xs font-medium transition-colors sm:w-auto ${
                 testingMode === "oauth"
                   ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                   : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
@@ -533,13 +529,13 @@ export default function ProvidersPage() {
       {(freeEntries.length > 0 || freeTierEntries.length > 0) && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2 leading-tight">
             Free Tier Providers
           </h2>
           <button
             onClick={() => handleBatchTest("free")}
             disabled={!!testingMode}
-            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
+            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 h-8 text-xs font-medium transition-colors sm:w-auto ${
               testingMode === "free"
                 ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
@@ -594,13 +590,13 @@ export default function ProvidersPage() {
       {apikeyEntries.length > 0 && (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2 leading-tight">
+          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2 leading-tight">
             API Key Providers{" "}
           </h2>
           <button
             onClick={() => handleBatchTest("apikey")}
             disabled={!!testingMode}
-            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors sm:w-auto sm:py-1.5 ${
+            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 h-8 text-xs font-medium transition-colors sm:w-auto ${
               testingMode === "apikey"
                 ? "bg-primary/20 border-primary/40 text-primary animate-pulse"
                 : "bg-bg border-border text-text-muted hover:text-text-main hover:border-primary/40"
@@ -743,7 +739,7 @@ function ProviderCard({ providerId, provider, stats, authType, onToggle }) {
               />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate font-semibold">{provider.name}</h3>
+              <h3 className="truncate text-sm font-semibold">{provider.name}</h3>
               <div className="flex min-w-0 items-center gap-1.5 text-xs flex-wrap">
                 {allDisabled ? (
                   <Badge variant="default" size="sm">
@@ -871,7 +867,7 @@ function ApiKeyProviderCard({
               />
             </div>
             <div className="min-w-0">
-              <h3 className="truncate font-semibold">{provider.name}</h3>
+              <h3 className="truncate text-sm font-semibold">{provider.name}</h3>
               <div className="flex min-w-0 items-center gap-1.5 text-xs flex-wrap">
                 {allDisabled ? (
                   <Badge variant="default" size="sm">

@@ -1,0 +1,30 @@
+/* Subset of material-symbols/outlined.css: same rules, but the font only holds
+   the icons used in src/ and open-sse/ (FILL axis kept, wght/GRAD/opsz pinned).
+   Regenerate the .woff2 with scripts/subset-material-symbols.py. */
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("./material-symbols-outlined.subset.woff2") format("woff2");
+}
+/* Base layer so Tailwind text-[Npx] utilities can resize icons */
+@layer base {
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "liga";
+}
+}

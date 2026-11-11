@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Button } from "@/shared/components";
+import { Button, Input } from "@/shared/components";
 import { getProviderCustomModelRows } from "@/shared/utils/providerCustomModels";
 
 function PassthroughModelRow({ modelId, fullModel, copied, onCopy, onDeleteAlias, onTest, testStatus, isTesting }) {
@@ -126,18 +126,17 @@ export default function PassthroughModelsSection({ providerAlias, modelAliases, 
 
       {/* Add new model */}
       <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <label htmlFor="new-model-input" className="text-xs text-text-muted mb-1 block">Model ID (from OpenRouter)</label>
-          <input
-            id="new-model-input"
-            type="text"
-            value={newModel}
-            onChange={(e) => setNewModel(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-            placeholder="anthropic/claude-3-opus"
-            className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-          />
-        </div>
+        <Input
+          id="new-model-input"
+          label="Model ID (from OpenRouter)"
+          type="text"
+          value={newModel}
+          onChange={(e) => setNewModel(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          placeholder="anthropic/claude-3-opus"
+          variant="outline"
+          className="flex-1 min-w-0"
+        />
         <Button size="sm" icon="add" onClick={handleAdd} disabled={!newModel.trim() || adding}>
           {adding ? "Adding..." : "Add"}
         </Button>

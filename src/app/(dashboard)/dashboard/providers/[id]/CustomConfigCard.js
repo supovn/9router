@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Card, Badge } from "@/shared/components";
+import { Card, Badge, Input } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
 
 // Mirrors the server-side gate in /api/providers/[id]/overrides — client check is UX only
@@ -112,22 +112,23 @@ export default function CustomConfigCard({ providerId }) {
               const overridden = row.name.trim() in builtin && row.value !== builtin[row.name.trim()];
               return (
                 <div key={i} className="flex items-center gap-2">
-                  <input
+                  <Input
                     value={row.name}
                     onChange={(e) => setRow(i, "name", e.target.value)}
                     placeholder="Header-Name"
                     spellCheck={false}
-                    className="w-44 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
+                    variant="outline"
+                    className="w-44"
                   />
-                  <input
+                  <Input
                     value={row.value}
                     onChange={(e) => setRow(i, "value", e.target.value)}
                     placeholder="Value"
                     spellCheck={false}
                     title={overridden ? "Overridden" : row.name.trim() in builtin ? "Registry default" : ""}
-                    className={`min-w-0 flex-1 rounded-md border bg-background px-2 py-1.5 text-sm focus:border-primary focus:outline-none ${
-                      overridden ? "border-amber-400/60" : "border-border"
-                    }`}
+                    variant="outline"
+                    className="min-w-0 flex-1"
+                    inputClassName={overridden ? "ring-1 ring-amber-400/60" : undefined}
                   />
                   <button
                     type="button"

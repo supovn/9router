@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card } from "@/shared/components";
+import { Card, Input, Select } from "@/shared/components";
+import Textarea from "@/shared/components/Textarea";
 import { AI_PROVIDERS, getProviderAlias } from "@/shared/constants/providers";
 import { getModelsByProviderId, getModelKind } from "@/shared/constants/models";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
@@ -367,46 +368,50 @@ export function TtsExampleCard({ providerId }) {
           {/* Model selector — prefer PROVIDER_MODELS[kind=tts], else providerModels via modelKey */}
           {providerId === "selfhosted-tts" && (
             <Row label="Model">
-              <input
+              <Input
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 placeholder="e.g. kokoro or Qwen3-TTS-12Hz-1.7B-CustomVoice-bf16"
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+                variant="outline"
+                className="w-full"
+                inputClassName="font-mono"
               />
             </Row>
           )}
           {providerId !== "selfhosted-tts" && config.hasModelSelector && (config.modelKey || getModelsByProviderId(providerId).some(m => getModelKind(m) === "tts")) && (
             <Row label="Model">
-              <select
+              <Select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-              >
-                {(() => {
+                options={(() => {
                   const ttsModels = getModelsByProviderId(providerId).filter(m => getModelKind(m) === "tts");
                   return (ttsModels.length ? ttsModels : getModelsByProviderId(config.modelKey) || []).map((m) => (
-                    <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                    { value: m.id, label: m.name || m.id }
                   ));
                 })()}
-              </select>
+                variant="outline"
+                className="w-full"
+              />
             </Row>
           )}
 
           {/* Language hint dropdown (Gemini, Xiaomi MiMo) — sends body.language to guide pronunciation */}
           {config.hasLanguageHint && (
             <Row label="Language">
-              <select
+              <Select
                 value={languageHint}
                 onChange={(e) => setLanguageHint(e.target.value)}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-              >
-                <option value="">Auto-detect</option>
-                {(config.languageOptions || GOOGLE_TTS_LANGUAGES).map((l) =>
-                  typeof l === "string"
-                    ? <option key={l} value={l}>{l}</option>
-                    : <option key={l.id} value={l.name}>{l.name}</option>
-                )}
-              </select>
+                options={[
+                  { value: "", label: "Auto-detect" },
+                  ...(config.languageOptions || GOOGLE_TTS_LANGUAGES).map((l) =>
+                    typeof l === "string"
+                      ? { value: l, label: l }
+                      : { value: l.name, label: l.name }
+                  ),
+                ]}
+                variant="outline"
+                className="w-full"
+              />
             </Row>
           )}
 
@@ -471,14 +476,16 @@ export function TtsExampleCard({ providerId }) {
             <Row label="Voice ID">
               <div className="flex flex-col gap-1">
                 <div className="relative">
-                  <input
+                  <Input
                     value={voiceId}
                     onChange={(e) => {
                       setVoiceId(e.target.value);
                       setSelectedVoice(e.target.value);
                     }}
                     placeholder={providerId === "selfhosted-tts" || providerId === "ollama-local" ? "e.g. Zoey, Easton, Freya, or default" : "e.g. CwhRBWXzGAHq8TQ4Fs17"}
-                    className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary font-mono"
+                    variant="outline"
+                    className="w-full"
+                    inputClassName="pr-7 font-mono"
                   />
                   {voiceId && (
                     <button
@@ -497,29 +504,31 @@ export function TtsExampleCard({ providerId }) {
           {/* Google TTS: Language dropdown */}
           {config.hasLanguageDropdown && (
             <Row label="Language">
-              <select
+              <Select
                 value={selectedVoice}
                 onChange={(e) => {
                   const m = getModelsByProviderId(providerId).filter((m) => getModelKind(m) === "tts").find((m) => m.id === e.target.value);
                   setSelectedVoice(e.target.value);
                   setSelectedVoiceName(m?.name || e.target.value);
                 }}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-              >
-                {getModelsByProviderId(providerId).filter((m) => getModelKind(m) === "tts").map((m) => (
-                  <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                options={getModelsByProviderId(providerId).filter((m) => getModelKind(m) === "tts").map((m) => (
+                  { value: m.id, label: m.name || m.id }
                 ))}
-              </select>
+                variant="outline"
+                className="w-full"
+              />
             </Row>
           )}
 
           {/* Input */}
           <Row label="Input">
             <div className="relative">
-              <input
+              <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                variant="outline"
+                className="w-full"
+                inputClassName="pr-7"
               />
               {input && (
                 <button
@@ -537,12 +546,15 @@ export function TtsExampleCard({ providerId }) {
           {config.hasStyleInput && (
             <Row label={translate("Style")}>
               <div className="relative">
-                <textarea
+                <Textarea
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
                   placeholder={translate("e.g. a warm, gentle voice, speaking slowly with a British accent")}
                   rows={2}
-                  className="w-full px-3 py-1.5 pr-7 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary resize-none"
+                  variant="outline"
+                  className="w-full"
+                  textareaClassName="pr-7"
+                  resize="none"
                 />
                 {style && (
                   <button
@@ -559,15 +571,13 @@ export function TtsExampleCard({ providerId }) {
 
           {/* Output Format */}
           <Row label="Output Format">
-            <select
+            <Select
               value={responseFormat}
               onChange={(e) => setResponseFormat(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
-            >
-              {formatOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              options={formatOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+              variant="outline"
+              className="w-full"
+            />
           </Row>
 
           {/* Curl + Run */}
@@ -663,12 +673,13 @@ export function TtsExampleCard({ providerId }) {
 
             {/* Search */}
             <div className="px-4 py-2.5 border-b border-border shrink-0">
-              <input
+              <Input
                 autoFocus
                 value={modalSearch}
                 onChange={(e) => setModalSearch(e.target.value)}
                 placeholder="Search language..."
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background focus:outline-none focus:border-primary"
+                variant="outline"
+                className="w-full"
               />
             </div>
 

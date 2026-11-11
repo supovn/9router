@@ -5,6 +5,8 @@ import Card from "@/shared/components/Card";
 import Button from "@/shared/components/Button";
 import Drawer from "@/shared/components/Drawer";
 import Pagination from "@/shared/components/Pagination";
+import Select from "@/shared/components/Select";
+import Input from "@/shared/components/Input";
 import { cn } from "@/shared/utils/cn";
 import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
 import { getInputTokens, getOutputTokens, getCachedTokens, getCacheCreationTokens } from "./tokenDisplay";
@@ -169,51 +171,40 @@ export default function RequestDetailsTab() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex min-w-0 flex-col gap-2">
             <label htmlFor="provider-filter" className="text-sm font-medium text-text-main">Provider</label>
-            <select
+            <Select
               id="provider-filter"
+              variant="outline"
+              className="w-full min-w-0"
+              options={[
+                { value: "", label: "All Providers" },
+                ...providers.map((provider) => ({ value: provider.id, label: provider.name })),
+              ]}
               value={filters.provider}
               onChange={(e) => setFilters({ ...filters, provider: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20",
-                "w-full min-w-0 cursor-pointer"
-              )}
-              style={{ colorScheme: 'auto' }}
-            >
-              <option value="">All Providers</option>
-              {providers.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           
           <div className="flex min-w-0 flex-col gap-2">
             <label htmlFor="start-date-filter" className="text-sm font-medium text-text-main">Start Date</label>
-            <input
+            <Input
               id="start-date-filter"
               type="datetime-local"
+              variant="outline"
+              className="w-full min-w-0"
               value={filters.startDate}
               onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "w-full min-w-0 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
-              )}
             />
           </div>
 
           <div className="flex min-w-0 flex-col gap-2">
             <label htmlFor="end-date-filter" className="text-sm font-medium text-text-main">End Date</label>
-            <input
+            <Input
               id="end-date-filter"
               type="datetime-local"
+              variant="outline"
+              className="w-full min-w-0"
               value={filters.endDate}
               onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "w-full min-w-0 text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
-              )}
             />
           </div>
           

@@ -37,8 +37,8 @@
   --color-sidebar: rgba(244, 241, 236, 0.85);
 
   /* Borders */
-  --color-border: #e5e7eb;
-  --color-border-subtle: #f1f1f3;
+  --color-border: #b4b9c0;
+  --color-border-subtle: #d1d5db;
 
   /* Text */
   --color-text: #0a0a0a;
@@ -93,8 +93,8 @@
   --color-surface-3: #3a3a3a;
   --color-sidebar: rgba(30, 30, 30, 0.85);
 
-  --color-border: #333333;
-  --color-border-subtle: #2a2a2a;
+  --color-border: #444444;
+  --color-border-subtle: #333333;
 
   --color-text: #ededed;
   --color-text-main: #ededed;
@@ -177,8 +177,8 @@ select {
   --color-surface-dark: #262626;
   --color-sidebar-light: #F4F1EC;
   --color-sidebar-dark: #1F1F1E;
-  --color-border-light: #e5e7eb;
-  --color-border-dark: #333333;
+  --color-border-light: #b4b9c0;
+  --color-border-dark: #444444;
   --color-text-main-light: #0a0a0a;
   --color-text-main-dark: #ededed;
   --color-text-muted-light: #6B7280;
@@ -328,7 +328,9 @@ input, textarea {
 .traffic-light.yellow { background: #FFBD2E; }
 .traffic-light.green { background: #27C93F; }
 
-/* Material Symbols */
+/* Material Symbols — in the base layer so text-[Npx] utilities can size icons
+   (unlayered CSS would beat Tailwind's @layer utilities) */
+@layer base {
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined', sans-serif;
   font-weight: normal;
@@ -348,6 +350,7 @@ input, textarea {
 }
 .material-symbols-outlined.fill-1 {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
 }
 
 /* Disable text selection on buttons */

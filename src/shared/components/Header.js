@@ -8,6 +8,7 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import HeaderMenu from "@/shared/components/HeaderMenu";
 import HeaderLanguage from "@/shared/components/HeaderLanguage";
 import ThemeToggle from "@/shared/components/ThemeToggle";
+import Input from "@/shared/components/Input";
 import DonateModal from "@/shared/components/DonateModal";
 import { useHeaderSearchStore } from "@/store/headerSearchStore";
 import { OAUTH_PROVIDERS, APIKEY_PROVIDERS } from "@/shared/constants/config";
@@ -362,15 +363,15 @@ function HeaderSearch() {
 
   return (
     <div className="relative w-[160px] sm:w-[220px]">
-      <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-[16px] pointer-events-none">
-        search
-      </span>
-      <input
+      <Input
         type="text"
+        size="sm"
+        icon="search"
+        className="w-full"
+        inputClassName="pr-7"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
-        className="w-full h-8 pl-7 pr-7 rounded-lg border border-border bg-surface/60 text-sm focus:outline-none focus:border-primary/50 transition-colors"
       />
       {query && (
         <button

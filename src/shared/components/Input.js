@@ -1,6 +1,16 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "@/shared/utils/cn";
+import FormField from "./FormField";
+import {
+  FIELD_BASE,
+  FIELD_ERROR,
+  FIELD_ICON_SIZES,
+  FIELD_SIZES,
+  FIELD_VARIANTS,
+  defaultFieldVariant,
+} from "./formStyles";
 
 export default function Input({
   label,
@@ -13,53 +23,50 @@ export default function Input({
   icon,
   disabled = false,
   required = false,
+  size = "md",
+  variant,
+  id,
   className,
   inputClassName,
   ...props
 }) {
+  const autoId = useId();
+  const inputId = id || (label ? `input-${autoId}` : undefined);
+  const iconSize = FIELD_ICON_SIZES[size] || FIELD_ICON_SIZES.md;
+
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      {label && (
-        <label htmlFor={props.id} className="text-sm font-medium text-text-main">
-          {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-      )}
+    <FormField label={label} htmlFor={inputId} required={required} error={error} hint={hint} className={className}>
       <div className="relative">
         {icon && (
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-muted">
-            <span className="material-symbols-outlined text-[20px]">{icon}</span>
+          <div
+            className={cn(
+              "absolute inset-y-0 left-0 flex items-center justify-center pointer-events-none text-text-muted",
+              iconSize.box
+            )}
+          >
+            <span className={cn("material-symbols-outlined", iconSize.icon)}>{icon}</span>
           </div>
         )}
         <input
+          id={inputId}
           type={type}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
           disabled={disabled}
+          aria-required={required || undefined}
+          aria-invalid={error ? true : undefined}
           className={cn(
-            "w-full py-2.5 px-3 text-sm text-text-main bg-surface-2 rounded-[10px]",
-            "border border-transparent placeholder-text-muted/70",
-            "focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/40",
-            "transition-all duration-150 ease-out disabled:opacity-50 disabled:cursor-not-allowed",
-            // iOS zoom fix
-            "text-[16px] sm:text-sm",
-            icon && "pl-10",
-            error && "ring-1 ring-red-500 focus:ring-2 focus:ring-red-500/40 border-red-500/40",
+            FIELD_BASE,
+            FIELD_SIZES[size] || FIELD_SIZES.md,
+            FIELD_VARIANTS[variant || defaultFieldVariant(size)],
+            icon && iconSize.padStart,
+            error && FIELD_ERROR,
             inputClassName
           )}
           {...props}
         />
       </div>
-      {error && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
-          <span className="material-symbols-outlined text-[14px]">error</span>
-          {error}
-        </p>
-      )}
-      {hint && !error && (
-        <p className="text-xs text-text-muted">{hint}</p>
-      )}
-    </div>
+    </FormField>
   );
 }

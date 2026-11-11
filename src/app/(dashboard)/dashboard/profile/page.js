@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Card, Button, Toggle, Input } from "@/shared/components";
+import Textarea from "@/shared/components/Textarea";
 import Modal, { ConfirmModal } from "@/shared/components/Modal";
 import LanguageSwitcher from "@/shared/components/LanguageSwitcher";
 import { useTheme } from "@/shared/hooks/useTheme";
@@ -1221,12 +1222,15 @@ export default function ProfilePage() {
                           onChange={handleCertFileUpload}
                         />
                       </div>
-                      <textarea
+                      <Textarea
                         rows={4}
+                        size="sm"
+                        variant="filled"
+                        className="w-full"
+                        textareaClassName="font-mono"
                         placeholder="-----BEGIN CERTIFICATE-----&#10;MIIC...&#10;-----END CERTIFICATE-----"
                         value={samlForm.samlCert}
                         onChange={(e) => updateSamlForm("samlCert", e.target.value)}
-                        className="w-full p-2.5 rounded-lg border border-border bg-bg text-xs font-mono text-text-main focus:outline-none focus:border-primary"
                         disabled={loading || samlLoading}
                       />
                       <p className="text-xs text-text-muted">Paste raw Base64 certificate or PEM block.</p>

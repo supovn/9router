@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Button, ModelSelectModal, ManualConfigModal } from "@/shared/components";
+import { Card, Button, Input, ModelSelectModal, ManualConfigModal } from "@/shared/components";
 import Image from "next/image";
 import ProviderIcon from "@/shared/components/ProviderIcon";
 import BaseUrlSelect from "./BaseUrlSelect";
@@ -401,7 +401,7 @@ default_subagent_model = "${effectiveSubagentModel}"
                   <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">Model</span>
                   <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
                   <div className="relative w-full min-w-0">
-                    <input type="text" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} placeholder="provider/model-id" className="w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5" />
+                    <Input size="sm" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} placeholder="provider/model-id" className="w-full min-w-0" inputClassName="pr-7" />
                     {selectedModel && <button onClick={() => setSelectedModel("")} className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 text-text-muted hover:text-red-500 rounded transition-colors" title="Clear"><span className="material-symbols-outlined text-[14px]">close</span></button>}
                   </div>
                   <button onClick={() => setModalOpen(true)} disabled={!activeProviders?.length} className={`w-full sm:w-auto rounded border px-2 py-2 text-xs transition-colors sm:py-1.5 whitespace-nowrap sm:shrink-0 ${activeProviders?.length ? "bg-surface border-border text-text-main hover:border-primary cursor-pointer" : "opacity-50 cursor-not-allowed border-border"}`}>Select Model</button>
@@ -412,12 +412,13 @@ default_subagent_model = "${effectiveSubagentModel}"
                   <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">Subagent Model</span>
                   <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
                   <div className="relative w-full min-w-0">
-                    <input
-                      type="text"
+                    <Input
+                      size="sm"
                       value={subagentModel}
                       onChange={(e) => setSubagentModel(e.target.value)}
                       placeholder={selectedModel || "provider/model-id (defaults to main model)"}
-                      className="w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
+                      className="w-full min-w-0"
+                      inputClassName="pr-7"
                     />
                     {subagentModel && (
                       <button
@@ -477,17 +478,18 @@ default_subagent_model = "${effectiveSubagentModel}"
                 {/* Quick Add Model bar */}
                 <div className="flex flex-col gap-1.5 p-2.5 bg-surface/40 border border-border rounded-lg">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[10rem_1fr_auto_auto] sm:items-center">
-                    <input
-                      type="text"
+                    <Input
+                      size="sm"
                       value={aliasInput}
                       onChange={(e) => setAliasInput(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
                       placeholder="Alias (e.g. claude)"
-                      className="w-full min-w-0 px-2.5 py-1.5 bg-surface rounded border border-border text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      className="w-full min-w-0"
+                      inputClassName="font-mono"
                       onKeyDown={(e) => e.key === "Enter" && handleAddProfileWithAlias()}
                     />
                     <div className="relative w-full min-w-0">
-                      <input
-                        type="text"
+                      <Input
+                        size="sm"
                         value={modelInput}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -496,7 +498,8 @@ default_subagent_model = "${effectiveSubagentModel}"
                           setAliasInput(deriveProfileNameFromModel(provider, profiles.map((p) => p.name)));
                         }}
                         placeholder="provider/model-id"
-                        className="w-full min-w-0 pl-2.5 pr-7 py-1.5 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full min-w-0"
+                        inputClassName="pr-7"
                         onKeyDown={(e) => e.key === "Enter" && handleAddProfileWithAlias()}
                       />
                       {modelInput && (

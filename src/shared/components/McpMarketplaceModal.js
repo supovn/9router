@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
+import Select from "./Select";
+import Input from "./Input";
 
 const REGISTRY_ENDPOINT = "/api/cli-tools/cowork-mcp-registry";
 const TOOLS_ENDPOINT = "/api/cli-tools/cowork-mcp-tools";
@@ -107,22 +109,25 @@ export default function McpMarketplaceModal({ isOpen, onClose, onAdd, addedNames
     <Modal isOpen={isOpen} onClose={onClose} title="Browse MCP Marketplace" size="lg">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
+            size="sm"
+            className="flex-1 min-w-0"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or description..."
-            className="flex-1 px-2 py-1.5 bg-surface rounded text-xs border border-border focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
-          <select
+          <Select
+            size="sm"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-2 py-1.5 bg-surface rounded text-xs border border-border focus:outline-none focus:ring-1 focus:ring-primary/50"
-          >
-            <option value="all">All</option>
-            <option value="authless">Authless</option>
-            <option value="oauth">OAuth</option>
-          </select>
+            options={[
+              { value: "all", label: "All" },
+              { value: "authless", label: "Authless" },
+              { value: "oauth", label: "OAuth" },
+            ]}
+            className="shrink-0"
+          />
         </div>
 
         {error && (

@@ -1,6 +1,5 @@
 import { Inter } from "next/font/google";
-import { GoogleAnalytics } from "@next/third-parties/google";
-import "material-symbols/outlined.css";
+import "./fonts/material-symbols.css";
 import "./globals.css";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import "@/lib/network/initOutboundProxy"; // Auto-initialize outbound proxy env
@@ -47,11 +46,11 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      {/* Browser extensions (Grammarly, ColorZilla, …) inject attributes on <body> before hydration. */}
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <ThemeProvider>
           <RuntimeI18nProvider>{children}</RuntimeI18nProvider>
         </ThemeProvider>
-        <GoogleAnalytics gaId={"G-LC959F603F"} />
       </body>
     </html>
   );

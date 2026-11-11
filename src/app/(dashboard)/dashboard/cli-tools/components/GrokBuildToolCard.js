@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Card, Button, ModelSelectModal, ManualConfigModal } from "@/shared/components";
+import { Card, Button, Input, ModelSelectModal, ManualConfigModal } from "@/shared/components";
 import { useModelCaps } from "@/shared/hooks/useModelCaps";
 import Image from "next/image";
 import BaseUrlSelect from "./BaseUrlSelect";
@@ -26,12 +26,13 @@ function ModelField({ label, value, placeholder, onChange, onSelect, disabled, h
       </div>
       <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
       <div className="relative w-full min-w-0">
-        <input
-          type="text"
+        <Input
+          size="sm"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
+          className="w-full min-w-0"
+          inputClassName="pr-7"
         />
         {value && (
           <button

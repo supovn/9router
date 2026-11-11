@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, Button, ModelSelectModal, ManualConfigModal, Tooltip } from "@/shared/components";
+import { Card, Button, Input, ModelSelectModal, ManualConfigModal, Tooltip, Select } from "@/shared/components";
 import Image from "next/image";
 import BaseUrlSelect from "./BaseUrlSelect";
 import { rememberEndpoint } from "./cliEndpointPresets";
@@ -404,12 +404,13 @@ export default function ClaudeToolCard({
                     <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="relative flex-1 min-w-0">
-                        <input
-                          type="text"
+                        <Input
+                          size="sm"
                           value={modelMappings[model.alias] || ""}
                           onChange={(e) => onModelMappingChange(model.alias, e.target.value)}
                           placeholder="provider/model-id"
-                          className="w-full min-w-0 pl-2 pr-7 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
+                          className="w-full min-w-0"
+                          inputClassName="pr-7"
                         />
                         {modelMappings[model.alias] && (
                           <button
@@ -440,11 +441,13 @@ export default function ClaudeToolCard({
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[8rem_auto_1fr] sm:items-center sm:gap-2">
                   <span className="text-xs font-semibold text-text-main sm:text-right sm:text-sm">Auto-compact</span>
                   <span className="material-symbols-outlined hidden text-text-muted text-[14px] sm:inline">arrow_forward</span>
-                  <select value={autoCompactWindow} onChange={(e) => setAutoCompactWindow(e.target.value)} className="w-full min-w-0 px-2 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5">
-                    {CONTEXT_OPTIONS.map((opt) => (
-                      <option key={opt.label} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                  <Select
+                    size="sm"
+                    value={autoCompactWindow}
+                    onChange={(e) => setAutoCompactWindow(e.target.value)}
+                    options={CONTEXT_OPTIONS}
+                    className="w-full min-w-0"
+                  />
                 </div>
 
                 {/* 1M context */}

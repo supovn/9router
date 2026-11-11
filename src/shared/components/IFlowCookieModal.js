@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Modal, Button, Input } from "@/shared/components";
+import Textarea from "./Textarea";
 
 /**
  * iFlow Cookie Authentication Modal
@@ -90,19 +91,17 @@ export default function IFlowCookieModal({ isOpen, onSuccess, onClose }) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-text-primary">
-                Cookie String
-              </label>
-              <textarea
-                value={cookie}
-                onChange={(e) => setCookie(e.target.value)}
-                placeholder="BXAuth=xxx; ..."
-                className="w-full px-3 py-2 bg-surface-secondary border border-border rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                rows={4}
-                disabled={loading}
-              />
-            </div>
+            <Textarea
+              label="Cookie String"
+              variant="outline"
+              className="w-full"
+              resize="none"
+              value={cookie}
+              onChange={(e) => setCookie(e.target.value)}
+              placeholder="BXAuth=xxx; ..."
+              rows={4}
+              disabled={loading}
+            />
 
             {error && (
               <div className="p-3 bg-error/10 border border-error/20 rounded-lg">

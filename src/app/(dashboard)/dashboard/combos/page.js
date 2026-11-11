@@ -409,16 +409,15 @@ export default function CombosPage() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-stretch">
           <div className="relative w-full sm:w-64">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-text-muted">
-              search
-            </span>
-            <input
+            <Input
               type="text"
+              icon="search"
+              className="w-full"
+              inputClassName="pr-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search combos…"
               aria-label="Search combos"
-              className="w-full rounded-[10px] border border-transparent bg-surface-2 py-2 pl-10 pr-9 text-sm text-text-main transition-all duration-150 ease-out placeholder-text-muted/70 focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             />
             {searchQuery && (
               <button
@@ -514,7 +513,7 @@ export default function CombosPage() {
                         const v = e.target.value;
                         if (v) handleBulkSetStrategy(v);
                       }}
-                      selectClassName="py-1.5 text-xs"
+                      size="sm"
                     />
                   </div>
                   <Button
@@ -797,7 +796,7 @@ function ComboCard({ combo, getCaps, comboByName = {}, activeProviders = [], cop
               options={STRATEGY_OPTIONS}
               value={current}
               onChange={(e) => onSetStrategy({ fallbackStrategy: e.target.value })}
-              selectClassName="py-1.5 text-xs"
+              size="sm"
             />
           </div>
 
@@ -1127,13 +1126,15 @@ function ModelItem({ id, index, model, isFirst, isLast, onEdit, onMoveUp, onMove
 
       {/* Inline editable model value */}
       {editing ? (
-        <input
+        <Input
           autoFocus
+          size="sm"
+          className="min-w-0 flex-1"
+          inputClassName="font-mono"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
-          className="min-w-0 flex-1 rounded border border-primary/40 bg-white px-1.5 py-0.5 font-mono text-xs text-text-main outline-none dark:bg-black/20"
         />
       ) : (
         <div

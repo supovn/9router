@@ -102,19 +102,17 @@ export default function NoAuthProxyCard({ providerId }) {
       />
 
       <div className="flex flex-col gap-2 mt-4">
-        <label className="text-sm font-medium text-text-main">Rotation Strategy</label>
-        <select
+        <Select
+          label="Rotation Strategy"
           value={rotateStrategy}
           onChange={(e) => handleStrategyChange(e.target.value)}
           disabled={saving}
-          className="py-2 px-3 text-sm text-text-main bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-md focus:ring-1 focus:ring-primary/30 focus:border-primary/50 focus:outline-none transition-all disabled:opacity-50"
-        >
-          {STRATEGIES.map((s) => (
-            <option key={s.value} value={s.value} disabled={s.value !== "none" && !canRotate}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+          options={STRATEGIES.map((s) => ({
+            value: s.value,
+            label: s.label,
+            disabled: s.value !== "none" && !canRotate,
+          }))}
+        />
         <p className="text-xs text-text-muted">
           {!canRotate
             ? `Need at least 2 active proxy pools for rotation.`

@@ -40,7 +40,7 @@ import {
   QUOTA_SORT_OPTIONS,
 } from "./utils";
 import Card from "@/shared/components/Card";
-import { ConfirmModal, EditConnectionModal } from "@/shared/components";
+import { ConfirmModal, EditConnectionModal, Input, Select } from "@/shared/components";
 import AutoPingScheduleModal from "@/app/(dashboard)/dashboard/providers/[id]/AutoPingScheduleModal";
 import { getScheduleSlotLabels } from "@/shared/services/quotaPingSchedule";
 import { USAGE_SUPPORTED_PROVIDERS, AI_PROVIDERS } from "@/shared/constants/providers";
@@ -203,7 +203,6 @@ export default function ProviderLimits() {
   const [quotaSortMode, setQuotaSortMode] = useState("default");
   const [quotaVisibility, setQuotaVisibility] = useState({});
   const [expiringFirst, setExpiringFirst] = useState(false);
-  const [providerMenuOpen, setProviderMenuOpen] = useState(false);
   const [bulkToggling, setBulkToggling] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(CONNECTIONS_PAGE_SIZE);
@@ -224,6 +223,9 @@ export default function ProviderLimits() {
   const intervalRef = useRef(null);
   const countdownRef = useRef(null);
   const tickCountRef = useRef(0);
+  // In-flight quota requests by connection id. React StrictMode (dev) runs the mount
+  // effect twice and auto-refresh can overlap the initial load — share the request.
+  const quotaInFlightRef = useRef(new Map());
 
   const fetchConnections = useCallback(
     async (targetPage = page) => {
@@ -268,7 +270,7 @@ export default function ProviderLimits() {
   );
 
   // Fetch quota for a specific connection
-  const fetchQuota = useCallback(async (connectionId, provider, { force = false } = {}) => {
+  const loadQuota = useCallback(async (connectionId, provider, { force = false } = {}) => {
     setLoading((prev) => ({ ...prev, [connectionId]: true }));
     setErrors((prev) => ({ ...prev, [connectionId]: null }));
 
@@ -344,6 +346,17 @@ export default function ProviderLimits() {
       setLoading((prev) => ({ ...prev, [connectionId]: false }));
     }
   }, []);
+
+  // A forced refresh always hits the server; otherwise join a request already in flight.
+  const fetchQuota = useCallback((connectionId, provider, { force = false } = {}) => {
+    const inFlight = quotaInFlightRef.current;
+    if (!force && inFlight.has(connectionId)) return inFlight.get(connectionId);
+    const request = loadQuota(connectionId, provider, { force }).finally(() => {
+      if (inFlight.get(connectionId) === request) inFlight.delete(connectionId);
+    });
+    inFlight.set(connectionId, request);
+    return request;
+  }, [loadQuota]);
 
   // Refresh quota for a specific provider
   const refreshProvider = useCallback(
@@ -839,8 +852,22 @@ export default function ProviderLimits() {
     bulkSetActive(ids, true);
   };
 
-  const selectedProviderLabel =
-    providerFilter === "all" ? "All providers" : providerLabel(providerFilter);
+  const providerFilterOptions = [
+    { value: "all", label: "All providers", icon: "apps" },
+    ...providerOptions.map((provider) => ({
+      value: provider,
+      label: providerLabel(provider),
+      icon: (
+        <ProviderIcon
+          src={`/providers/${provider}.png`}
+          alt={provider}
+          size={18}
+          className="size-[18px] rounded object-contain"
+          fallbackText={provider.slice(0, 2).toUpperCase()}
+        />
+      ),
+    })),
+  ];
   const hasEligibleConnections = totals.eligibleConnections > 0;
   const hasVisibleConnections = sortedConnections.length > 0;
   const emptyState = getConnectionsEmptyMessage(
@@ -894,106 +921,25 @@ export default function ProviderLimits() {
       {/* Header Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex flex-wrap items-center gap-1.5">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProviderMenuOpen((prev) => !prev)}
-              className="flex h-8 items-center justify-between gap-1 rounded-lg border border-black/10 bg-black/[0.02] px-2 text-xs text-text-primary transition-colors hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/10"
-              aria-haspopup="menu"
-              aria-expanded={providerMenuOpen}
-              title="Filter quota providers"
-            >
-              <span className="flex min-w-0 items-center gap-1.5">
-                {providerFilter === "all" ? (
-                  <span className="material-symbols-outlined text-[14px] text-text-muted">
-                    apps
-                  </span>
-                ) : (
-                  <ProviderIcon
-                    src={`/providers/${providerFilter}.png`}
-                    alt={providerFilter}
-                    size={18}
-                    className="size-[18px] rounded object-contain"
-                    fallbackText={providerFilter.slice(0, 2).toUpperCase()}
-                  />
-                )}
-                <span className="truncate hidden lg:inline">
-                  {selectedProviderLabel}
-                </span>
-              </span>
-              <span className="material-symbols-outlined text-[14px] text-text-muted">
-                expand_more
-              </span>
-            </button>
-
-            {providerMenuOpen && (
-              <>
-                <button
-                  type="button"
-                  className="fixed inset-0 z-30 bg-transparent"
-                  aria-label="Close provider filter"
-                  onClick={() => setProviderMenuOpen(false)}
-                />
-                <div className="absolute left-0 z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-black/10 bg-surface/95 p-1.5 shadow-xl shadow-black/10 backdrop-blur dark:border-white/10 dark:bg-surface/95 sm:w-72">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (shouldResetPage(providerFilter, "all")) {
-                        setPage(1);
-                      }
-                      setProviderFilter("all");
-                      setProviderMenuOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${providerFilter === "all" ? "bg-primary/10 text-primary" : "text-text-primary hover:bg-black/5 dark:hover:bg-white/10"}`}
-                  >
-                    <span className="material-symbols-outlined text-[22px]">
-                      apps
-                    </span>
-                    <span className="font-medium">All providers</span>
-                    {providerFilter === "all" && (
-                      <span className="material-symbols-outlined ml-auto text-[20px]">
-                        check
-                      </span>
-                    )}
-                  </button>
-                  <div className="my-1 h-px bg-black/10 dark:bg-white/10" />
-                  <div className="max-h-72 overflow-y-auto pr-1">
-                    {providerOptions.map((provider) => (
-                      <button
-                        key={provider}
-                        type="button"
-                        onClick={() => {
-                          if (shouldResetPage(providerFilter, provider)) {
-                            setPage(1);
-                          }
-                          setProviderFilter(provider);
-                          setProviderMenuOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${providerFilter === provider ? "bg-primary/10 text-primary" : "text-text-primary hover:bg-black/5 dark:hover:bg-white/10"}`}
-                      >
-                        <ProviderIcon
-                          src={`/providers/${provider}.png`}
-                          alt={provider}
-                          size={24}
-                          className="size-6 rounded-md object-contain"
-                          fallbackText={provider.slice(0, 2).toUpperCase()}
-                        />
-                        <span className="font-medium">
-                          {providerLabel(provider)}
-                        </span>
-                        {providerFilter === provider && (
-                          <span className="material-symbols-outlined ml-auto text-[20px]">
-                            check
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-          <select
+          <Select
+            size="sm"
+            options={providerFilterOptions}
+            value={providerFilter}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              if (shouldResetPage(providerFilter, nextValue)) {
+                setPage(1);
+              }
+              setProviderFilter(nextValue);
+            }}
+            title="Filter quota providers"
+            aria-label="Filter quota providers"
+            triggerLabelClassName="hidden lg:inline"
+            listClassName="w-64 sm:w-72"
+          />
+          <Select
+            size="sm"
+            options={ACCOUNT_FILTER_OPTIONS}
             value={accountFilter}
             onChange={(event) => {
               const nextValue = event.target.value;
@@ -1002,29 +948,17 @@ export default function ProviderLimits() {
               }
               setAccountFilter(nextValue);
             }}
-            className="h-8 rounded-lg border border-black/10 bg-black/[0.02] px-2 text-xs text-text-primary outline-none transition-colors hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/10"
             aria-label="Filter accounts by status"
-          >
-            {ACCOUNT_FILTER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          />
 
           {providerFilter === "codex" && (
-            <select
+            <Select
+              size="sm"
+              options={QUOTA_SORT_OPTIONS}
               value={quotaSortMode}
               onChange={(event) => setQuotaSortMode(event.target.value)}
-              className="h-8 rounded-lg border border-black/10 bg-black/[0.02] px-2 text-xs text-text-primary outline-none transition-colors hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/10"
               aria-label="Sort Codex quotas by remaining"
-            >
-              {QUOTA_SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            />
           )}
 
           <button
@@ -1034,7 +968,7 @@ export default function ProviderLimits() {
             className={`flex h-8 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs transition-colors ${expiringFirst ? "border-amber-500/40 bg-amber-500/10 text-amber-500" : "border-black/10 text-text-primary hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"}`}
             title="Sort accounts by earliest quota reset time"
           >
-            <span className="material-symbols-outlined text-[14px]">
+            <span className="material-symbols-outlined text-[16px]">
               hourglass_top
             </span>
             <span className="hidden sm:inline">Expiring first</span>
@@ -1048,7 +982,7 @@ export default function ProviderLimits() {
             className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-red-500/30 px-2 text-xs text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
             title="Disable connections with depleted quota on the current page"
           >
-            <span className="material-symbols-outlined text-[14px]">block</span>
+            <span className="material-symbols-outlined text-[16px]">block</span>
             <span className="hidden sm:inline">Turn off Empty</span>
           </button>
 
@@ -1060,7 +994,7 @@ export default function ProviderLimits() {
             className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-emerald-500/30 px-2 text-xs text-emerald-500 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
             title="Enable connections that still have quota on the current page"
           >
-            <span className="material-symbols-outlined text-[14px]">
+            <span className="material-symbols-outlined text-[16px]">
               check_circle
             </span>
             <span className="hidden sm:inline">Turn on Available</span>
@@ -1073,7 +1007,7 @@ export default function ProviderLimits() {
             title={autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"}
           >
             <span
-              className={`material-symbols-outlined text-[14px] ${
+              className={`material-symbols-outlined text-[16px] ${
                 autoRefresh ? "text-primary" : "text-text-muted"
               }`}
             >
@@ -1099,7 +1033,7 @@ export default function ProviderLimits() {
             title="Refresh all"
           >
             <span
-              className={`material-symbols-outlined text-[14px] ${refreshingAll ? "animate-spin" : ""}`}
+              className={`material-symbols-outlined text-[16px] ${refreshingAll ? "animate-spin" : ""}`}
             >
               refresh
             </span>
@@ -1420,7 +1354,16 @@ export default function ProviderLimits() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs text-text-muted">{connectionsPageSummary}</span>
             <div className="flex flex-wrap items-center gap-2">
-              <select
+              <Select
+                size="sm"
+                options={[
+                  ...ACCOUNT_PAGE_SIZE_OPTIONS.map((option) => ({
+                    value: String(option),
+                    label: `${option} / page`,
+                  })),
+                  // Shown when a non-preset size is active; set via the number input
+                  { value: "custom", label: "Custom", disabled: true },
+                ]}
                 value={isCustomPageSize ? "custom" : String(pageSize)}
                 onChange={(event) => {
                   const nextValue = event.target.value;
@@ -1432,18 +1375,12 @@ export default function ProviderLimits() {
                     setCustomPageSizeInput(String(nextPageSize));
                   }
                 }}
-                className="h-8 rounded-lg border border-black/10 bg-black/[0.02] px-2 text-xs text-text-primary outline-none transition-colors hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/10"
                 aria-label="Accounts per page"
-              >
-                {ACCOUNT_PAGE_SIZE_OPTIONS.map((option) => (
-                  <option key={option} value={String(option)}>
-                    {option} / page
-                  </option>
-                ))}
-                <option value="custom">Custom</option>
-              </select>
-              <input
+              />
+              <Input
                 type="number"
+                size="sm"
+                className="w-20"
                 min="1"
                 max={String(ACCOUNT_PAGE_SIZE_MAX)}
                 inputMode="numeric"
@@ -1472,7 +1409,6 @@ export default function ProviderLimits() {
                   setPageSize(nextPageSize);
                   setCustomPageSizeInput(String(nextPageSize));
                 }}
-                className="h-8 w-20 rounded-lg border border-black/10 bg-black/[0.02] px-2 text-xs text-text-primary outline-none transition-colors hover:bg-black/5 dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/10"
                 aria-label="Custom accounts per page"
                 placeholder="Custom"
               />

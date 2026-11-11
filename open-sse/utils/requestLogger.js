@@ -69,25 +69,39 @@ function writeJsonFile(sessionPath, filename, data) {
   }
 }
 
-// Mask sensitive data in headers (DISABLED - keep full token for testing)
-function maskSensitiveHeaders(headers) {
+// Header names (substring, case-insensitive) whose values are credentials.
+// Covers authorization/proxy-authorization, x-api-key/x-goog-api-key, cookie/set-cookie, *-token.
+const SENSITIVE_HEADER_KEYS = ["authorization", "api-key", "apikey", "cookie", "token", "secret", "password"];
+// Credentials passed in the query string (e.g. Gemini `?key=`).
+const SENSITIVE_QUERY_RE = /([?&](?:key|api[-_]?key|access[-_]?token|token|auth)=)[^&#]*/gi;
+
+// Keep the auth scheme and a short prefix/suffix so logs stay useful for telling keys apart.
+function maskValue(value) {
+  const str = String(value ?? "");
+  const scheme = str.match(/^(Bearer|Basic|Token)\s+/i)?.[0] || "";
+  const secret = str.slice(scheme.length);
+  if (secret.length <= 12) return `${scheme}***`;
+  return `${scheme}${secret.slice(0, 4)}…${secret.slice(-4)}`;
+}
+
+function toPlainHeaders(headers) {
   if (!headers) return {};
-  return { ...headers };
-  
-  // Old masking code (disabled):
-  // const masked = { ...headers };
-  // const sensitiveKeys = ["authorization", "x-api-key", "cookie", "token"];
-  // 
-  // for (const key of Object.keys(masked)) {
-  //   const lowerKey = key.toLowerCase();
-  //   if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
-  //     const value = masked[key];
-  //     if (value && value.length > 20) {
-  //       masked[key] = value.slice(0, 10) + "..." + value.slice(-5);
-  //     }
-  //   }
-  // }
-  // return masked;
+  return typeof headers.entries === "function" ? Object.fromEntries(headers.entries()) : { ...headers };
+}
+
+function maskSensitiveHeaders(headers) {
+  const masked = toPlainHeaders(headers);
+  for (const key of Object.keys(masked)) {
+    const lowerKey = key.toLowerCase();
+    if (SENSITIVE_HEADER_KEYS.some((sk) => lowerKey.includes(sk))) {
+      masked[key] = Array.isArray(masked[key]) ? masked[key].map(maskValue) : maskValue(masked[key]);
+    }
+  }
+  return masked;
+}
+
+function maskUrl(url) {
+  return typeof url === "string" ? url.replace(SENSITIVE_QUERY_RE, "$1***") : url;
 }
 
 // No-op logger when logging is disabled
@@ -130,7 +144,7 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
     logClientRawRequest(endpoint, body, headers = {}) {
       writeJsonFile(sessionPath, "1_req_client.json", {
         timestamp: new Date().toISOString(),
-        endpoint,
+        endpoint: maskUrl(endpoint),
         headers: maskSensitiveHeaders(headers),
         body
       });
@@ -157,7 +171,7 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
     logTargetRequest(url, headers, body) {
       writeJsonFile(sessionPath, "4_req_target.json", {
         timestamp: new Date().toISOString(),
-        url,
+        url: maskUrl(url),
         headers: maskSensitiveHeaders(headers),
         body
       });
@@ -170,7 +184,7 @@ export async function createRequestLogger(sourceFormat, targetFormat, model) {
         timestamp: new Date().toISOString(),
         status,
         statusText,
-        headers: headers ? (typeof headers.entries === "function" ? Object.fromEntries(headers.entries()) : headers) : {},
+        headers: maskSensitiveHeaders(headers),
         body
       });
     },
@@ -247,7 +261,7 @@ export function logError(provider, { error, url, model, requestBody }) {
       type: "error",
       provider,
       model,
-      url,
+      url: maskUrl(url),
       error: error?.message || String(error),
       stack: error?.stack,
       requestBody
@@ -258,3 +272,5 @@ export function logError(provider, { error, url, model, requestBody }) {
     console.log("[LOG] Failed to write error log:", err.message);
   }
 }
+
+export const __test__ = { maskSensitiveHeaders, maskUrl };

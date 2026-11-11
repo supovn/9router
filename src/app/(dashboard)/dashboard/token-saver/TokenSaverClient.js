@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, Button, Input, Modal, Toggle, ConfirmModal } from "@/shared/components";
+import Textarea from "@/shared/components/Textarea";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 import { getCurrentLocale, onLocaleChange } from "@/i18n/runtime";
 import {
@@ -769,20 +770,19 @@ export default function TokenSaverClient() {
         </div>
         {customPromptEnabled && (
           <div className="pt-3">
-            <textarea
+            <Textarea
               id="custom-prompt"
               aria-label="Custom system prompt"
+              size="sm"
+              variant="outline"
+              className="w-full"
+              hint="Applied to every provider and model. Sent as-is to upstream; an empty prompt injects nothing."
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               onBlur={handleCustomPromptBlur}
               rows={4}
               placeholder="e.g. Prefer editing existing files over creating new ones."
-              className="w-full rounded border border-border bg-transparent p-2 text-xs"
             />
-            <p className="text-xs text-text-muted mt-1">
-              Applied to every provider and model. Sent as-is to upstream; an
-              empty prompt injects nothing.
-            </p>
           </div>
         )}
         {/* PXPIPE hidden from UI — experimental, not exposed to users yet */}

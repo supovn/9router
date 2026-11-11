@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, Button, ModelSelectModal, ManualConfigModal } from "@/shared/components";
+import { Card, Button, Input, ModelSelectModal, ManualConfigModal } from "@/shared/components";
 import Image from "next/image";
 import BaseUrlSelect from "./BaseUrlSelect";
 import { rememberEndpoint } from "./cliEndpointPresets";
@@ -348,13 +348,13 @@ export default function DroidToolCard({
                     )}
                     {/* Model input row */}
                     <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
+                      <Input
+                        size="sm"
                         value={modelInput}
                         onChange={(e) => setModelInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addModel(); } }}
                         placeholder="provider/model-id"
-                        className="w-full min-w-0 px-2 py-2 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 sm:py-1.5"
+                        className="w-full min-w-0"
                       />
                       <button
                         onClick={() => setModalOpen(true)}
